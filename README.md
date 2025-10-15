@@ -7,7 +7,7 @@ It helps you **track, organize, and visualize your inventory** — whether onlin
 ---
 
 ## 🔗 Versions
-There are 2 versions offline and online which you can find in assets area
+There are 2 versions offline and online which you can find in releases area
 
 
 ## 🚀 Features:
