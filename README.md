@@ -94,6 +94,8 @@ You can use, modify, and distribute freely — attribution appreciated.
 ## 👤 Authors:
 Samuel, Parminder
   
+-💻 GitHub of Parminder: https://github.com/JohnJackson12<br />
+-💻 GitHub of Samuel: (https://github.com/SamS34)<br />
+-📧 Contact of Samuel: sam.of.s34@gmail.com<br />
+-📧 Contact of Parminder: parminder.nz@gmail.com<br />
 
-💻 GitHub: [https://github.com/<your-username>](https://github.com/SamS34)
-📧 Contact: sam.of.s34@gmail.com
