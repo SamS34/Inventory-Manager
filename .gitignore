@@ -1,0 +1,58 @@
+# Android Studio / IntelliJ
+# Ignores user-specific settings, caches, and generated files.
+.gradle/
+.idea/
+*.iml
+*.iws
+*.ipr
+build/
+local.properties
+
+# Build artifacts
+# These are the compiled outputs of your project.
+*.apk
+*.aab
+*.so
+*.a
+*.o
+*.o.d
+*.so.d
+
+# Generated files from older Android toolchains
+gen/
+out/
+
+# Firebase
+# It's best practice not to commit this file to public repositories.
+google-services.json
+
+# Signing Keys
+# CRITICAL: Never commit your signing keys.
+*.keystore
+*.jks
+*.pem
+
+# Log files
+*.log
+
+# C/C++ native build files
+.cxx/
+.externalNativeBuild/
+
+# Android Studio captures folder (screenshots/videos from emulator)
+captures/
+
+# Navigation editor temp files
+.navigation/
+
+# Misc
+.classpath
+.project
+.settings/
+*.swp
+*.swo
+*~
+.vscode/
+
+# macOS
+.DS_Store
