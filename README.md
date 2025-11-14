@@ -1,39 +1,87 @@
-## Features
+# 📱 Android Inventory Pro
 
-The `HelpScreen` is designed to guide the user through the app's functionalities. It is divided into several collapsible sections, each addressing a specific aspect of the application:
+**Android Inventory Pro** is a native inventory management application built for **Android**.
 
-*   **❓ Help & Support Center:** A header that introduces the purpose of the screen.
-*   **🚀 Getting Started Guide:** A step-by-step tutorial for new users, covering the creation of locations, building a storage hierarchy, and adding and finding items.
-*   **👜 Managing Your Items:** Explanations of key item management features like Auto-Save, OCR (Optical Character Recognition), and AI-powered item recognition. It also details how to add custom dropdown options.
-*   **💾 Data, Backup & Sync:** Information on local data storage, and detailed instructions on how to back up, restore, and sync inventory data with a computer application.
-*   **⚙️ Advanced Settings & APIs:** Details for advanced users about API key integration for enhanced OCR and AI functionalities, and an explanation of the priority fallback system.
-*   **ℹ️ App Information and Contact:** A dedicated card that displays app details and provides contact information for the developers, including links to their GitHub profiles and email addresses.
+It helps you **track, organize, and visualize your inventory** — whether online or fully offline, right from your device.
 
-## UI and Code Structure
+---
 
-The screen is built with a `LazyColumn` to efficiently display a scrollable list of items. The main components are:
+## 🔗 Functionality
+The app functions as a single, powerful tool. Core features work completely offline, with optional online capabilities for backup and enhanced item recognition.
 
-### Core Composables
+## 🚀 Features:
 
-*   `HelpScreen()`: The main composable function that assembles the entire screen.
-*   `CollapsibleHelpSection()`: A reusable composable that creates a clickable, expandable card. This is used for each major help topic, allowing users to show or hide content as needed.
-*   `HelpContentBlock()`: A simple composable for formatting the question-and-answer style content within each collapsible section.
-*   `ContactRow()`: A row designed to display contact information, complete with an icon, title, and a clickable subtitle that opens an external link (GitHub or email).
-*   `InfoRow()`: A composable for displaying key-value information, used in the "App Information" section.
+### 🧩 Inventory Management
+- **Add, edit, or delete items** with a simple, intuitive interface.
+- Track essential details: **Item Name, Location, Condition, Functionality,** descriptions, and more.
+- **Upload existing photos** or use the **camera** to capture new ones for your items.
+- Your work is saved automatically with the **Auto-Save** feature.
 
-### Key Functionality
+### 📊 Dashboard & Overview
+- Get a complete, **spreadsheet-like view** of all your items in the 'Overview' tab.
+- The 'Search' tab allows you to instantly find any item in your inventory.
 
-*   **State Management:** The expanded/collapsed state of each `CollapsibleHelpSection` is managed using `remember { mutableStateOf(...) }`.
-*   **Animation:** The expansion and collapse of sections are animated using `AnimatedVisibility`. The rotation of the expand/collapse icon is animated with `animateFloatAsState`.
-*   **Intents:** The contact section uses Android `Intent`s to open web pages (`ACTION_VIEW`) and email clients (`ACTION_SENDTO`) when a user clicks on the respective links.
+### 🗂️ Location Hierarchy
+- Create and manage physical locations with a nested structure.
+- Organize items within a **Garage → Cabinet → Shelf → Box** system for precise tracking.
 
-## Contact & Credits
+### 🔍 Smart Search
+- Instantly **find anything** you've added.
+- The dedicated 'Search' tab provides immediate results to locate your items quickly.
 
-This screen was developed by:
+### 🎨 Native Android UI
+- Built with **Jetpack Compose** for a modern, smooth, and responsive experience.
+- The UI is designed with large, touch-friendly components and clean layouts.
 
-*   **Parminder**
-    *   GitHub: [JohnJackson12](https://github.com/JohnJackson12)
-    *   Email: [parminder.nz@gmail.com](mailto:parminder.nz@gmail.com)
-*   **Samuel**
-    *   GitHub: [SamS34](https://github.com/SamS34)
-    *   Email: [sam.of.s34@gmail.com](mailto:sam.of.s34@gmail.com)
+### ☁️ Cloud & AI Integration     (COMING SOON)
+- **Backup & Restore** your entire inventory to **Google Drive**.
+- Optional **AI & OCR** integration using API keys to automatically identify items from photos and scan text like model numbers.
+
+---
+
+## 🧠 Optional AI & OCR Setup     (NON TESTED)
+The app works perfectly with its built-in tools. For even more powerful results, you can connect to external services.
+
+> Enter your API keys in **Settings → Advanced Settings & APIs** inside the app. The app uses a fallback system, trying each service in order until it gets a result.
+
+---
+
+## 📲 Android Tips
+
+- The app stores all data on your device, so it runs **fully offline**.
+- It is **highly recommended** you create regular backups using the "Export" or "Google Drive" features in Settings.
+- Use the **'Locations' tab** to build your storage structure first for better organization.
+- Add **photos** to your items to make them instantly recognizable.
+
+---
+
+## 🧰 Tech Stack
+
+- **Language:** **Kotlin**
+- **UI Toolkit:** **Android Jetpack Compose**
+- **Data Storage:** **Local On-Device Storage**
+
+
+---
+
+## 💾 Backup & Restore
+| Method | Description |
+| :--- | :--- |
+| **Export Data** | Saves a complete copy of your inventory as a single `.json` file. |
+| **Import Data** | Loads an inventory from a `.json` file (overwrites current data). |
+| (COMING SOON) **Google Drive** | Sign in to save your backup file directly to a private folder. |     
+| **Auto-Save**| Changes are saved automatically as you edit items. |
+
+## 📝 License
+This project is licensed under the MIT License.
+You can use, modify, and distribute it freely — attribution is appreciated.
+
+---
+  
+## 👤 Authors:
+This application was created by **Samuel** and **Parminder**.
+  
+| Samuel | Parminder |
+| :--- | :--- |
+| 💻 GitHub: [@SamS34](https://github.com/SamS34) | 💻 GitHub: [@JohnJackson12](https://github.com/JohnJackson12) |
+| 📧 Contact: [sam.of.s34@gmail.com](mailto:sam.of.s34@gmail.com) | 📧 Contact: [parminder.nz@gmail.com](mailto:parminder.nz@gmail.com) |
