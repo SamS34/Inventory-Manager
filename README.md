@@ -1,101 +1,39 @@
-# 📱 Android Inventory Pro
+## Features
 
-**Android Inventory Pro** is a mobile-friendly, browser-based inventory management app built for **Android** and you can use it as a **desktop** user.
+The `HelpScreen` is designed to guide the user through the app's functionalities. It is divided into several collapsible sections, each addressing a specific aspect of the application:
 
-It helps you **track, organize, and visualize your inventory** — whether online or fully offline.
+*   **❓ Help & Support Center:** A header that introduces the purpose of the screen.
+*   **🚀 Getting Started Guide:** A step-by-step tutorial for new users, covering the creation of locations, building a storage hierarchy, and adding and finding items.
+*   **👜 Managing Your Items:** Explanations of key item management features like Auto-Save, OCR (Optical Character Recognition), and AI-powered item recognition. It also details how to add custom dropdown options.
+*   **💾 Data, Backup & Sync:** Information on local data storage, and detailed instructions on how to back up, restore, and sync inventory data with a computer application.
+*   **⚙️ Advanced Settings & APIs:** Details for advanced users about API key integration for enhanced OCR and AI functionalities, and an explanation of the priority fallback system.
+*   **ℹ️ App Information and Contact:** A dedicated card that displays app details and provides contact information for the developers, including links to their GitHub profiles and email addresses.
 
----
+## UI and Code Structure
 
-## 🔗 Versions
-There are 2 versions offline and online which you can find in releases area
+The screen is built with a `LazyColumn` to efficiently display a scrollable list of items. The main components are:
 
+### Core Composables
 
-## 🚀 Features:
+*   `HelpScreen()`: The main composable function that assembles the entire screen.
+*   `CollapsibleHelpSection()`: A reusable composable that creates a clickable, expandable card. This is used for each major help topic, allowing users to show or hide content as needed.
+*   `HelpContentBlock()`: A simple composable for formatting the question-and-answer style content within each collapsible section.
+*   `ContactRow()`: A row designed to display contact information, complete with an icon, title, and a clickable subtitle that opens an external link (GitHub or email).
+*   `InfoRow()`: A composable for displaying key-value information, used in the "App Information" section.
 
-### 🧩 Inventory Management
-- Add, edit, or delete items easily  
-- Track name, SKU, model, quantity, prices, and descriptions  
-- Upload or capture photos directly  
-- Saves data automatically to **localStorage** (no internet needed)
+### Key Functionality
 
-### 📊 Dashboard & Analytics
-- Shows total items, stock value, and locations  
-- Visual charts for quantities and categories  
-- Built with **Chart.js**
+*   **State Management:** The expanded/collapsed state of each `CollapsibleHelpSection` is managed using `remember { mutableStateOf(...) }`.
+*   **Animation:** The expansion and collapse of sections are animated using `AnimatedVisibility`. The rotation of the expand/collapse icon is animated with `animateFloatAsState`.
+*   **Intents:** The contact section uses Android `Intent`s to open web pages (`ACTION_VIEW`) and email clients (`ACTION_SENDTO`) when a user clicks on the respective links.
 
-### 🗂️ Locations
-- Create and organize **Cabinets** and **Shelves**  
-- Nested structure for better organization  
+## Contact & Credits
 
-### 🔍 Smart Search
-- Filter by name, model, SKU, or category  
-- Instant results  
-- Tap to open or edit an item  
+This screen was developed by:
 
-### 🎨 Android UI + Themes
-- Designed for **touch screens**  
-- Large buttons and smooth animations  
-- Toggle between **Light** and **Dark** themes  
-
-### ☁️ Cloud & AI (Online Version)
-- Google Drive backup and restore  
-- Optional AI + OCR integration with OpenAI, Gemini, Claude, Azure, or Google Vision  
-
----
-
-## 🧠 Optional AI & OCR Setup (Full Version)
-Comes with online version
-
-> Enter your keys in **Settings → AI / OCR** inside the full app.
-
----
-
-## 📲 Android Tips
-
-- Works on any browser if you want non downloadble link
-- You can downlaod a APK for easier use
-- Tap **“Add to Home Screen”** for an app-like experience  
-- Stays saved even after you close the browser  
-- Runs fully **offline** once loaded  
-
----
-
-## 🧰 Tech Stack
-
-- **HTML5 / TailwindCSS** for layout  
-- **Vanilla JavaScript (ES6)**  
-- **Chart.js** for visual analytics  
-- **Tesseract.js** for OCR (Full version)  
-- **Google Drive API / OAuth 2.0** (Full version)
-
----
-
-## 🛠️ Developer Info
-
-- 100% front-end project — no build tools or frameworks required  
-- Works on Android and desktop browsers  
-- All data stored locally under:  
-  ```text
-  localStorage key: androidInventory.v1
-Easy to customize and extend directly in HTML/JS
-
-💾 Backup & Restore
-Method	Description
-Export JSON	Download your full inventory as .json
-Import JSON	Load previous backups
-Local Save	Saves automatically in your browser
-Google Drive	Cloud backup (Full version only)
-
-📝 License
-This project is licensed under the MIT License.
-You can use, modify, and distribute freely — attribution appreciated.
-
-  
-## 👤 Authors:
-Samuel, Parminder
-  
--💻 GitHub of Parminder: https://github.com/JohnJackson12<br />
--💻 GitHub of Samuel: (https://github.com/SamS34)<br />
--📧 Contact of Samuel: sam.of.s34@gmail.com<br />
--📧 Contact of Parminder: parminder.nz@gmail.com<br />
-
+*   **Parminder**
+    *   GitHub: [JohnJackson12](https://github.com/JohnJackson12)
+    *   Email: [parminder.nz@gmail.com](mailto:parminder.nz@gmail.com)
+*   **Samuel**
+    *   GitHub: [SamS34](https://github.com/SamS34)
+    *   Email: [sam.of.s34@gmail.com](mailto:sam.of.s34@gmail.com)
