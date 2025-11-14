@@ -79,9 +79,21 @@ You can use, modify, and distribute it freely — attribution is appreciated.
 ---
   
 ## 👤 Authors:
-This application was created by **Samuel** and **Parminder**.
+This application was created by **Samuel** and **Parminder**.  IF SOMETHING DOESN'T WORK CONTACT US OR PUT IT IN THE ISSUES AREA
   
 | Samuel | Parminder |
 | :--- | :--- |
 | 💻 GitHub: [@SamS34](https://github.com/SamS34) | 💻 GitHub: [@JohnJackson12](https://github.com/JohnJackson12) |
 | 📧 Contact: [sam.of.s34@gmail.com](mailto:sam.of.s34@gmail.com) | 📧 Contact: [parminder.nz@gmail.com](mailto:parminder.nz@gmail.com) |
+
+
+
+
+
+
+
+
+
+
+
+
