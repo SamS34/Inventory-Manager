@@ -1,2 +1,9 @@
 FIX GOOGLE SIGN IN
 FIX SYNC 
+
+
+ADD multiple cabinet/shelf/box creating
+ADD photo editing in Create Item (IMAGES) crop/rotato/brightness
+ADD AI/OCR BUTTONS IN CREATE ITEM
+ADD STARTING HOME SCREEN
+ADD item deleting
