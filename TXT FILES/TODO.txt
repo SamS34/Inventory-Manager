@@ -5,6 +5,6 @@ FIX SYNC
 ADD multiple cabinet/shelf/box creating
 ADD photo editing in Create Item (IMAGES) crop/rotato/brightness
 ADD AI/OCR BUTTONS IN CREATE ITEM
-ADD STARTING HOME SCREEN
+ADD STARTING HOME SCREEN          with asking for gmail/email sign in for saving 
 ADD item deleting
 ADD export/import app data                and       add the feature of exporting a excel spreadsheet
