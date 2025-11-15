@@ -7,3 +7,4 @@ ADD photo editing in Create Item (IMAGES) crop/rotato/brightness
 ADD AI/OCR BUTTONS IN CREATE ITEM
 ADD STARTING HOME SCREEN
 ADD item deleting
+ADD export/import app data
