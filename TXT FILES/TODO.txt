@@ -1,10 +1,12 @@
-FIX GOOGLE SIGN IN
+FIX GOOGLE SIGN-IN
 FIX SYNC 
 
 
-ADD multiple cabinet/shelf/box creating
-ADD photo editing in Create Item (IMAGES) crop/rotato/brightness
+ADD multiple cabinets/shelves/boxes, creating
+ADD photo editing in Create Item (IMAGES): crop/rotate/brightness.
 ADD AI/OCR BUTTONS IN CREATE ITEM
-ADD STARTING HOME SCREEN          with asking for gmail/email sign in for saving 
+ADD STARTING HOME SCREEN          with asking for gmail/email sign-in for saving 
 ADD item deleting
-ADD export/import app data                and       add the feature of exporting a excel spreadsheet
+ADD export/import app data                and       add the feature of exporting an Excel spreadsheet
+ADD a view item button on the home screen. 
+On it, add an overview-like feature
