@@ -1,9 +1,10 @@
 FIX GOOGLE SIGN-IN
 FIX SYNC 
+FIX Google play scan protect
 
 
 ADD multiple cabinets/shelves/boxes, creating
-ADD photo editing in Create Item (IMAGES): crop/rotate/brightness.
+Add photo editing in Create Item (IMAGES): crop/rotate/brightness.
 ADD AI/OCR BUTTONS IN CREATE ITEM
 ADD STARTING HOME SCREEN          with asking for gmail/email sign-in for saving 
 ADD item deleting
@@ -12,4 +13,4 @@ ADD a view item button on the home screen.
 On it, add an overview-like feature
 ADD feature of other people being invited
 ADD button on the sidebar, in which you can go to a shared section in which there are garages shared with you/garages you can share with people.
-ADD the feature so that when you open the app for the first time, it will ask you for an email and tell you the benefits of an email and add a skip button. 
+ADD the feature so that when you open the app for the first time, it will ask you for an email and tell you the benefits of an email and add a skip button.
