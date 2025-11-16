@@ -1,6 +1,7 @@
 FIX GOOGLE SIGN-IN
 FIX SYNC 
 FIX Google play scan protect
+FIX app icon
 
 
 ADD multiple cabinets/shelves/boxes, creating
