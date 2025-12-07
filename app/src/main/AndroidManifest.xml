@@ -8,23 +8,27 @@
         android:required="false" />
     <uses-permission android:name="android.permission.CAMERA" />
 
+    <!-- Internet for web services/APIs -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <!--
-     Storage Permissions
-     Warning: MANAGE_EXTERNAL_STORAGE requires Google Play approval for most apps.
-     Ensure your app's core functionality depends on broad file access.
+     Storage Permissions (Modern Android Best Practices):
+     READ/WRITE_EXTERNAL_STORAGE are deprecated starting from API 30.
+     For API 30+, it's best to rely on Scoped Storage, which the FileProvider
+     configuration below handles without needing these broad permissions.
+     MANAGE_EXTERNAL_STORAGE should only be used if absolutely necessary.
     -->
+    <!-- For Android 11 (API 30) and above. THIS IS THE FIX. -->
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
-        tools:ignore="ScopedStorage" />
+        tools:ignore="AllFilesAccessPolicy,ScopedStorage" />
+
+    <!-- Old permissions for older devices (API 29 and below) -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="29" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="29" />
 
 
-    <!--
-     Application Definition
-     All attributes must be inside this single opening tag.
-    -->
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -34,7 +38,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.InventoryManager"
-        android:requestLegacyExternalStorage="true"
         tools:targetApi="31">
 
         <activity
@@ -47,9 +50,14 @@
             </intent-filter>
         </activity>
 
+        <!--
+        *** FIX for IllegalArgumentException: Couldn't find meta-data... ***
+        The authority must exactly match the string used in FileProvider.getUriForFile()
+        which the log suggests is 'com.samuel.inventorymanager.provider'.
+        -->
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.provider"
+            android:authorities="com.samuel.inventorymanager.provider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data

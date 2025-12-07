@@ -1,9 +1,10 @@
+// *** REPLACE THE ENTIRE CONTENTS of SettingsScreen.kt with this final code ***
+
 @file:Suppress("DEPRECATION")
 
 package com.samuel.inventorymanager.screens
 
 import android.Manifest
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -33,30 +34,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.DocumentScanner
+import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Login
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Psychology
-import androidx.compose.material.icons.filled.RestartAlt
-import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Upload
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -67,15 +56,13 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -91,46 +78,73 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.common.api.ApiException
-import com.samuel.inventorymanager.auth.GoogleAuthManager
-import com.samuel.inventorymanager.data.AISettings
+import androidx.core.net.toUri
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import com.google.gson.Gson
 import com.samuel.inventorymanager.data.AppSettings
 import com.samuel.inventorymanager.data.AppTheme
-import com.samuel.inventorymanager.data.AutoFeatures
 import com.samuel.inventorymanager.data.CustomTheme
 import com.samuel.inventorymanager.data.FontSize
-import com.samuel.inventorymanager.data.GoogleSettings
-import com.samuel.inventorymanager.data.OCRSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.OutputStreamWriter
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+// Helper function to check permission state
+private fun checkStoragePermission(context: Context): Boolean {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        Environment.isExternalStorageManager()
+    } else {
+        ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     currentSettings: AppSettings,
-    onSettingsChange: (AppSettings) -> Unit
+    currentData: AppData,
+    onSettingsChange: (AppSettings) -> Unit,
+    onDataChange: (AppData) -> Unit,
+    onClearAllData: () -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val authManager = remember { GoogleAuthManager(context) }
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     var settings by remember { mutableStateOf(currentSettings) }
     var showColorPicker by remember { mutableStateOf(false) }
-    var showResetDialog by remember { mutableStateOf(false) }
+    var showClearDataDialog by remember { mutableStateOf(false) }
     var isProcessing by remember { mutableStateOf(false) }
     var feedbackMessage by remember { mutableStateOf<String?>(null) }
+    var hasStoragePermission by remember { mutableStateOf(checkStoragePermission(context)) }
+
+    // This observer re-checks the permission every time the user returns to this screen. THIS IS THE FIX.
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                hasStoragePermission = checkStoragePermission(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
 
     LaunchedEffect(currentSettings) {
         settings = currentSettings
@@ -139,154 +153,105 @@ fun SettingsScreen(
     LaunchedEffect(feedbackMessage) {
         feedbackMessage?.let { message ->
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-            kotlinx.coroutines.delay(2000)
+            kotlinx.coroutines.delay(2500)
             feedbackMessage = null
         }
     }
 
     val storagePermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val granted = permissions.values.all { it }
-        feedbackMessage = if (granted) "✅ Storage permission granted" else "❌ Storage permission denied"
+    ) {
+        hasStoragePermission = checkStoragePermission(context)
+        feedbackMessage = if (hasStoragePermission) "✅ Storage granted" else "❌ Storage denied"
     }
 
     val manageStorageLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) {
-        val granted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            Environment.isExternalStorageManager()
-        } else true
-        feedbackMessage = if (granted) "✅ Storage access granted" else "❌ Storage access denied"
+        // This runs after the user returns from the system settings screen
+        hasStoragePermission = checkStoragePermission(context)
+        feedbackMessage = if (hasStoragePermission) "✅ Storage permission granted!" else "❌ Storage permission was not granted."
     }
 
     val requestStoragePermission = {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             if (!Environment.isExternalStorageManager()) {
                 val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
-                    data = Uri.parse("package:${context.packageName}")
+                    data = "package:${context.packageName}".toUri()
                 }
                 manageStorageLauncher.launch(intent)
+            } else {
+                feedbackMessage = "✅ Storage permission is already granted."
             }
         } else {
             storagePermissionLauncher.launch(
-                arrayOf(
-                    Manifest.permission.READ_EXTERNAL_STORAGE,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE
-                )
+                arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE)
             )
         }
     }
 
-    // Firebase Google Sign-In Launcher
-    val googleSignInLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-            try {
-                val account = task.getResult(ApiException::class.java)
-                val idToken = account?.idToken
-
-                if (idToken != null) {
-                    authManager.handleSignInResult(
-                        idToken,
-                        onSuccess = { message ->
-                            settings = settings.copy(
-                                googleSettings = settings.googleSettings.copy(
-                                    signedIn = true,
-                                    userEmail = authManager.getCurrentUserEmail()
-                                )
-                            )
-                            onSettingsChange(settings)
-                            feedbackMessage = message
-                        },
-                        onError = { error ->
-                            feedbackMessage = error
-                        }
-                    )
-                }
-            } catch (e: ApiException) {
-                feedbackMessage = "❌ Sign in failed: ${e.message}"
-            }
-        } else {
-            feedbackMessage = "❌ Sign in cancelled"
-        }
-    }
-
-    val onSignInClick: () -> Unit = {
-        val signInIntent = authManager.getSignInIntent()
-        googleSignInLauncher.launch(signInIntent)
-    }
-
-    val importLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
+    val jsonImportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
             scope.launch {
                 isProcessing = true
-                val result = importSettings(context, it)
+                val result = importAppDataFromJson(context, it)
                 isProcessing = false
-                result?.let { importedSettings ->
-                    settings = importedSettings
-                    onSettingsChange(importedSettings)
-                    feedbackMessage = "✅ Settings imported successfully"
-                } ?: run {
-                    feedbackMessage = "❌ Failed to import settings"
-                }
+                result?.let { importedData ->
+                    onDataChange(importedData)
+                    feedbackMessage = "✅ Data imported successfully"
+                } ?: run { feedbackMessage = "❌ Import failed. Invalid file." }
             }
         }
     }
 
-    val exportLauncher = rememberLauncherForActivityResult(
+    val jsonExportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json")
     ) { uri: Uri? ->
         uri?.let {
             scope.launch {
                 isProcessing = true
-                val success = exportSettings(context, settings, it)
+                val success = exportAppDataToJson(context, currentData, it)
                 isProcessing = false
-                feedbackMessage = if (success) "✅ Settings exported successfully"
-                else "❌ Failed to export settings"
+                feedbackMessage = if (success) "✅ Backup exported successfully" else "❌ Export failed"
             }
         }
     }
 
-    var themeExpanded by remember { mutableStateOf(true) }
-    var ocrExpanded by remember { mutableStateOf(false) }
-    var aiExpanded by remember { mutableStateOf(false) }
-    var googleExpanded by remember { mutableStateOf(false) }
-    var dataExpanded by remember { mutableStateOf(false) }
+    val csvExportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/csv")
+    ) { uri: Uri? ->
+        uri?.let {
+            scope.launch {
+                isProcessing = true
+                val success = exportAppDataToCsv(context, currentData, it)
+                isProcessing = false
+                feedbackMessage = if (success) "✅ CSV exported successfully" else "❌ Export failed"
+            }
+        }
+    }
+
+    var themeExpanded by remember { mutableStateOf(false) }
+    var dataExpanded by remember { mutableStateOf(true) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxSize().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
-                feedbackMessage?.let { message ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (message.startsWith("✅"))
-                                MaterialTheme.colorScheme.primaryContainer
-                            else MaterialTheme.colorScheme.errorContainer
-                        )
-                    ) {
-                        Text(
-                            message,
-                            modifier = Modifier.padding(16.dp),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Text("⚙️ Settings", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Text("Manage themes, data, and backups.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
                     }
                 }
             }
-
             item {
                 ExpandableCard(
-                    title = "Theme Settings",
+                    title = "🎨 Theme & Appearance",
                     icon = Icons.Default.Palette,
                     expanded = themeExpanded,
                     onToggle = { themeExpanded = !themeExpanded }
@@ -300,149 +265,49 @@ fun SettingsScreen(
                         onFontSizeChange = { newFontSize ->
                             settings = settings.copy(fontSize = newFontSize)
                             onSettingsChange(settings)
-                        },
-                        onCustomThemeClick = { showColorPicker = true }
-                    )
-                }
-            }
-
-            item {
-                ExpandableCard(
-                    title = "OCR Settings & Fallback Priority",
-                    icon = Icons.Default.DocumentScanner,
-                    expanded = ocrExpanded,
-                    onToggle = { ocrExpanded = !ocrExpanded }
-                ) {
-                    OCRSettingsContent(
-                        ocrSettings = settings.ocrSettings,
-                        onUpdate = { newOcrSettings ->
-                            settings = settings.copy(ocrSettings = newOcrSettings)
-                            onSettingsChange(settings)
                         }
                     )
                 }
             }
-
             item {
                 ExpandableCard(
-                    title = "AI Settings & Fallback Priority",
-                    icon = Icons.Default.Psychology,
-                    expanded = aiExpanded,
-                    onToggle = { aiExpanded = !aiExpanded }
-                ) {
-                    AISettingsContent(
-                        aiSettings = settings.aiSettings,
-                        onUpdate = { newAiSettings ->
-                            settings = settings.copy(aiSettings = newAiSettings)
-                            onSettingsChange(settings)
-                        }
-                    )
-                }
-            }
-
-            item {
-                ExpandableCard(
-                    title = "Google Settings",
-                    icon = Icons.Default.Cloud,
-                    expanded = googleExpanded,
-                    onToggle = { googleExpanded = !googleExpanded }
-                ) {
-                    GoogleSettingsContent(
-                        authManager = authManager,
-                        googleSettings = settings.googleSettings,
-                        onSignInClick = onSignInClick,
-                        onUpdate = { newGoogleSettings ->
-                            settings = settings.copy(googleSettings = newGoogleSettings)
-                            onSettingsChange(settings)
-                        },
-                        onBackupNow = {
-                            scope.launch {
-                                isProcessing = true
-                                authManager.uploadToDrive(
-                                    "inventory_backup_${System.currentTimeMillis()}.json",
-                                    onSuccess = { message ->
-                                        isProcessing = false
-                                        val updated = settings.copy(
-                                            googleSettings = settings.googleSettings.copy(
-                                                lastBackupTime = System.currentTimeMillis()
-                                            )
-                                        )
-                                        settings = updated
-                                        onSettingsChange(updated)
-                                        feedbackMessage = message
-                                    }
-                                )
-                            }
-                        }
-                    )
-                }
-            }
-
-            item {
-                ExpandableCard(
-                    title = "Data Management & Android Features",
+                    title = "💾 Data Management",
                     icon = Icons.Default.Storage,
                     expanded = dataExpanded,
                     onToggle = { dataExpanded = !dataExpanded }
                 ) {
                     DataManagementContent(
-                        autoFeatures = settings.autoFeatures,
+                        hasPermission = hasStoragePermission, // Pass the reactive state here
                         onRequestPermissions = requestStoragePermission,
-                        onUpdate = { newAutoFeatures ->
-                            settings = settings.copy(autoFeatures = newAutoFeatures)
-                            onSettingsChange(settings)
+                        onExportJson = {
+                            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+                            jsonExportLauncher.launch("inventory_backup_$timestamp.json")
                         },
-                        onExport = {
-                            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
-                                .format(Date())
-                            exportLauncher.launch("inventory_settings_$timestamp.json")
-                        },
-                        onImport = {
-                            importLauncher.launch("application/json")
-                        },
-                        onLocalSaveNow = {
-                            scope.launch {
-                                isProcessing = true
-                                val success = performLocalSave(context, settings)
-                                isProcessing = false
-                                if (success) {
-                                    val updated = settings.copy(
-                                        autoFeatures = settings.autoFeatures.copy(
-                                            lastLocalSaveTime = System.currentTimeMillis()
-                                        )
-                                    )
-                                    settings = updated
-                                    onSettingsChange(updated)
-                                    feedbackMessage = "✅ Local save completed"
-                                } else {
-                                    feedbackMessage = "❌ Local save failed"
-                                }
-                            }
+                        onImportJson = { jsonImportLauncher.launch("application/json") },
+                        onExportCsv = {
+                            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+                            csvExportLauncher.launch("inventory_export_$timestamp.csv")
                         }
                     )
                 }
             }
-
+            item { Spacer(Modifier.height(16.dp)) }
             item {
-                Button(
-                    onClick = { showResetDialog = true },
+                OutlinedButton(
+                    onClick = { showClearDataDialog = true },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
-                    )
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
                 ) {
-                    Icon(Icons.Default.RestartAlt, null)
+                    Icon(Icons.Default.DeleteForever, null)
                     Spacer(Modifier.width(8.dp))
-                    Text("Reset All Settings")
+                    Text("Clear All Data")
                 }
             }
         }
-
         if (isProcessing) {
             Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.5f)),
+                Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
@@ -462,41 +327,33 @@ fun SettingsScreen(
         )
     }
 
-    if (showResetDialog) {
+    if (showClearDataDialog) {
         AlertDialog(
-            onDismissRequest = { showResetDialog = false },
-            title = { Text("Reset Settings") },
-            text = { Text("Are you sure you want to reset all settings to default?") },
+            onDismissRequest = { showClearDataDialog = false },
+            title = { Text("Clear All Data?") },
+            text = { Text("This will permanently delete all your inventory data and settings. This action cannot be undone.") },
             confirmButton = {
                 Button(
                     onClick = {
-                        settings = AppSettings()
-                        onSettingsChange(settings)
-                        showResetDialog = false
-                        feedbackMessage = "✅ Settings reset to default"
+                        onClearAllData()
+                        showClearDataDialog = false
+                        feedbackMessage = "✅ All application data has been cleared."
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
-                    )
-                ) { Text("Reset") }
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) { Text("Clear Everything") }
             },
-            dismissButton = {
-                TextButton({ showResetDialog = false }) { Text("Cancel") }
-            }
+            dismissButton = { TextButton({ showClearDataDialog = false }) { Text("Cancel") } }
         )
     }
 }
 
-// ========================================================================================
-// HELPER FUNCTIONS
-// ========================================================================================
+// DATA I/O FUNCTIONS and UI HELPERS remain the same, just moved outside the main composable
 
-suspend fun exportSettings(context: Context, settings: AppSettings, uri: Uri): Boolean {
+private suspend fun exportAppDataToJson(context: Context, appData: AppData, uri: Uri): Boolean {
     return withContext(Dispatchers.IO) {
         try {
-            context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-                outputStream.write(settings.toJson().toByteArray())
-            }
+            val jsonString = Gson().toJson(appData)
+            context.contentResolver.openOutputStream(uri)?.use { it.write(jsonString.toByteArray()) }
             true
         } catch (e: Exception) {
             e.printStackTrace()
@@ -505,12 +362,12 @@ suspend fun exportSettings(context: Context, settings: AppSettings, uri: Uri): B
     }
 }
 
-suspend fun importSettings(context: Context, uri: Uri): AppSettings? {
+private suspend fun importAppDataFromJson(context: Context, uri: Uri): AppData? {
     return withContext(Dispatchers.IO) {
         try {
-            context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                val json = inputStream.bufferedReader().readText()
-                AppSettings.fromJson(json)
+            context.contentResolver.openInputStream(uri)?.use {
+                val json = it.bufferedReader().readText()
+                Gson().fromJson(json, AppData::class.java)
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -519,11 +376,31 @@ suspend fun importSettings(context: Context, uri: Uri): AppSettings? {
     }
 }
 
-suspend fun performLocalSave(context: Context, settings: AppSettings): Boolean {
+private suspend fun exportAppDataToCsv(context: Context, appData: AppData, uri: Uri): Boolean {
     return withContext(Dispatchers.IO) {
         try {
-            val file = java.io.File(context.filesDir, "app_settings.json")
-            file.writeText(settings.toJson())
+            val garageMap = appData.garages.associateBy { it.id }
+            val cabinetMap = appData.garages.flatMap { it.cabinets }.associateBy { it.id }
+            val shelfMap = appData.garages.flatMap { it.cabinets }.flatMap { it.shelves }.associateBy { it.id }
+            val boxMap = appData.garages.flatMap { it.cabinets }.flatMap { it.shelves }.flatMap { it.boxes }.associateBy { it.id }
+
+            context.contentResolver.openOutputStream(uri)?.use { stream ->
+                OutputStreamWriter(stream).use { writer ->
+                    writer.appendLine("\"itemID\",\"itemName\",\"quantity\",\"condition\",\"functionality\",\"garageName\",\"cabinetName\",\"shelfName\",\"boxName\",\"modelNumber\",\"description\",\"webLink\",\"minPrice\",\"maxPrice\",\"weight\",\"sizeCategory\",\"dimensions\"")
+                    appData.items.forEach { item ->
+                        val row = listOf(
+                            item.id, item.name, item.quantity.toString(), item.condition,
+                            item.functionality, garageMap[item.garageId]?.name ?: "N/A",
+                            cabinetMap[item.cabinetId]?.name ?: "N/A", shelfMap[item.shelfId]?.name ?: "N/A",
+                            item.boxId?.let { boxMap[it]?.name } ?: "", item.modelNumber ?: "",
+                            item.description ?: "", item.webLink ?: "",
+                            item.minPrice?.toString() ?: "", item.maxPrice?.toString() ?: "",
+                            item.weight?.toString() ?: "", item.sizeCategory, item.dimensions ?: ""
+                        ).joinToString(",") { "\"${it.replace("\"", "\"\"")}\"" }
+                        writer.appendLine(row)
+                    }
+                }
+            }
             true
         } catch (e: Exception) {
             e.printStackTrace()
@@ -532,48 +409,25 @@ suspend fun performLocalSave(context: Context, settings: AppSettings): Boolean {
     }
 }
 
-// ========================================================================================
-// COMPOSABLE COMPONENTS
-// ========================================================================================
-
 @Composable
-fun ExpandableCard(
-    title: String,
-    icon: ImageVector,
-    expanded: Boolean,
-    onToggle: () -> Unit,
+private fun ExpandableCard(
+    title: String, icon: ImageVector, expanded: Boolean, onToggle: () -> Unit,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
+    Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(2.dp)) {
         Column {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onToggle)
-                    .padding(16.dp),
+                modifier = Modifier.fillMaxWidth().clickable(onClick = onToggle).padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(icon, null, tint = MaterialTheme.colorScheme.primary)
+                Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
                 Spacer(Modifier.width(16.dp))
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f)
-                )
-                Icon(
-                    if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    null
-                )
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null)
             }
             AnimatedVisibility(visible = expanded) {
                 Column(
-                    Modifier
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .fillMaxWidth(),
+                    Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     content = content
                 )
@@ -583,449 +437,26 @@ fun ExpandableCard(
 }
 
 @Composable
-fun ThemeSettingsContent(
-    settings: AppSettings,
-    onThemeChange: (AppTheme) -> Unit,
-    onFontSizeChange: (FontSize) -> Unit,
-    onCustomThemeClick: () -> Unit
-) {
-    val themeOptions = listOf(
-        "☀️ Light" to Color(0xFFFFFBFE),
-        "🌙 Dark" to Color(0xFF1A1A1A),
-        "🧛 Dracula" to Color(0xFFBD93F9),
-        "🧟 Vampire" to Color(0xFFFF1493),
-        "🌊 Ocean" to Color(0xFF00B4D8),
-        "🌲 Forest" to Color(0xFF2D6A4F),
-        "🌅 Sunset" to Color(0xFFFF6B35),
-        "⚙️ Cyberpunk" to Color(0xFFFF006E),
-        "⚡ Neon" to Color(0xFF39FF14)
-    )
-
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Select Theme", style = MaterialTheme.typography.labelLarge)
-
-        // --- FIX START ---
-        // Replace LazyVerticalGrid with a standard Column and Rows to build the grid
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // Group the theme options into rows of 3
-            themeOptions.chunked(3).forEach { rowItems ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Create a ThemeOptionCard for each item in the row, giving it equal weight
-                    rowItems.forEach { (name, color) ->
-                        Box(modifier = Modifier.weight(1f)) {
-                            ThemeOptionCard(name, color, settings.theme == AppTheme.CUSTOM) {
-                                onThemeChange(AppTheme.CUSTOM)
-                                onCustomThemeClick()
-                            }
-                        }
-                    }
-                    // Add invisible spacers to fill the row if it has fewer than 3 items.
-                    // This ensures items in the last row align correctly with the rows above.
-                    if (rowItems.size < 3) {
-                        repeat(3 - rowItems.size) {
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
-                    }
-                }
-            }
-        }
-        // --- FIX END ---
-
-        HorizontalDivider(Modifier.padding(vertical = 8.dp))
-
-        Text("Font & Icon Size", style = MaterialTheme.typography.labelLarge)
-        Text(
-            "Select default text size",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FontSize.entries.forEach { size ->
-                FontSizeButton(
-                    size.name.lowercase().replaceFirstChar { it.uppercase() },
-                    settings.fontSize == size
-                ) { onFontSizeChange(size) }
-            }
-        }
-    }
-}
-
-@Composable
-fun ThemeOptionCard(
-    themeName: String,
-    themeColor: Color,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(80.dp)
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = themeColor.copy(alpha = 0.2f)
-        ),
-        border = if (isSelected) BorderStroke(3.dp, themeColor) else null,
-        elevation = CardDefaults.cardElevation(if (isSelected) 4.dp else 1.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            themeColor.copy(alpha = 0.4f),
-                            themeColor.copy(alpha = 0.1f)
-                        )
-                    )
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    themeName,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = Color.Black,
-                    fontWeight = FontWeight.Bold
-                )
-                if (isSelected) {
-                    Icon(
-                        Icons.Default.Check,
-                        null,
-                        tint = themeColor,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun RowScope.FontSizeButton(text: String, selected: Boolean, onClick: () -> Unit) {
-    Button(
-        onClick,
-        Modifier.weight(1f),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (selected)
-                MaterialTheme.colorScheme.primary
-            else
-                MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Text(text, fontSize = 11.sp, maxLines = 1)
-    }
-}
-
-@Composable
-fun OCRSettingsContent(ocrSettings: OCRSettings, onUpdate: (OCRSettings) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(
-            "OCR Priority (Use Fallback)",
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            "Higher priority providers are tried first",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        ocrSettings.providerPriority.forEachIndexed { index, provider ->
-            ProviderPriorityItem(
-                name = provider.name.replace("_", " ").lowercase()
-                    .split(" ").joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } },
-                priority = index + 1,
-                onMoveUp = if (index > 0) {
-                    {
-                        val newList = ocrSettings.providerPriority.toMutableList()
-                        val temp = newList[index]
-                        newList[index] = newList[index - 1]
-                        newList[index - 1] = temp
-                        onUpdate(ocrSettings.copy(providerPriority = newList))
-                    }
-                } else null,
-                onMoveDown = if (index < ocrSettings.providerPriority.size - 1) {
-                    {
-                        val newList = ocrSettings.providerPriority.toMutableList()
-                        val temp = newList[index]
-                        newList[index] = newList[index + 1]
-                        newList[index + 1] = temp
-                        onUpdate(ocrSettings.copy(providerPriority = newList))
-                    }
-                } else null
-            )
-        }
-
-        Button(
-            onClick = { onUpdate(ocrSettings.copy(providerPriority = OCRSettings().providerPriority)) },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.outlinedButtonColors()
-        ) {
-            Icon(Icons.Default.RestartAlt, null)
-            Spacer(Modifier.width(8.dp))
-            Text("Reset to Default Priority")
-        }
-
-        HorizontalDivider(Modifier.padding(vertical = 8.dp))
-
-        APIKeyField("Roboflow API Key", ocrSettings.roboflowApiKey) {
-            onUpdate(ocrSettings.copy(roboflowApiKey = it))
-        }
-        APIKeyField("OCR Space API Key", ocrSettings.ocrSpaceApiKey) {
-            onUpdate(ocrSettings.copy(ocrSpaceApiKey = it))
-        }
-        APIKeyField("Google Vision API Key", ocrSettings.googleVisionApiKey) {
-            onUpdate(ocrSettings.copy(googleVisionApiKey = it))
-        }
-    }
-}
-
-@Composable
-fun AISettingsContent(aiSettings: AISettings, onUpdate: (AISettings) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(
-            "AI Priority (Use Fallback)",
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            "Higher priority providers are tried first",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        aiSettings.providerPriority.forEachIndexed { index, provider ->
-            ProviderPriorityItem(
-                name = provider.name.replace("_", " ").lowercase()
-                    .split(" ").joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } },
-                priority = index + 1,
-                onMoveUp = if (index > 0) {
-                    {
-                        val newList = aiSettings.providerPriority.toMutableList()
-                        val temp = newList[index]
-                        newList[index] = newList[index - 1]
-                        newList[index - 1] = temp
-                        onUpdate(aiSettings.copy(providerPriority = newList))
-                    }
-                } else null,
-                onMoveDown = if (index < aiSettings.providerPriority.size - 1) {
-                    {
-                        val newList = aiSettings.providerPriority.toMutableList()
-                        val temp = newList[index]
-                        newList[index] = newList[index + 1]
-                        newList[index + 1] = temp
-                        onUpdate(aiSettings.copy(providerPriority = newList))
-                    }
-                } else null
-            )
-        }
-
-        Icon(Icons.Default.RestartAlt, null)
-        Spacer(Modifier.width(8.dp))
-        Text("Reset to Default Priority")
-    }
-
-    HorizontalDivider(Modifier.padding(vertical = 8.dp))
-
-    APIKeyField("Google Gemini API Key", aiSettings.googleGeminiApiKey) {
-        onUpdate(aiSettings.copy(googleGeminiApiKey = it))
-    }
-    APIKeyField("ChatGPT API Key", aiSettings.openAIApiKey) {
-        onUpdate(aiSettings.copy(openAIApiKey = it))
-    }
-}
-
-
-@Composable
-fun GoogleSettingsContent(
-    authManager: GoogleAuthManager,
-    googleSettings: GoogleSettings,
-    onSignInClick: () -> Unit,
-    onUpdate: (GoogleSettings) -> Unit,
-    onBackupNow: () -> Unit
+private fun DataManagementContent(
+    hasPermission: Boolean, // Takes the state as a parameter now
+    onRequestPermissions: () -> Unit, onExportJson: () -> Unit, onImportJson: () -> Unit, onExportCsv: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        if (authManager.isSignedIn()) {
+        if (!hasPermission) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.CheckCircle,
-                        "Signed In",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(32.dp)
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            "✅ Signed In",
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Text(
-                            authManager.getCurrentUserEmail(),
-                            style = MaterialTheme.typography.bodySmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                }
-            }
-
-            SwitchRow(
-                "🔄 Auto Backup to Drive",
-                googleSettings.autoBackupToDrive
-            ) {
-                onUpdate(googleSettings.copy(autoBackupToDrive = it))
-            }
-
-            if (googleSettings.lastBackupTime > 0) {
-                Text(
-                    "Last backup: ${SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault()).format(Date(googleSettings.lastBackupTime))}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Button(
-                onClick = onBackupNow,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Default.Backup, null)
-                Spacer(Modifier.width(8.dp))
-                Text("Backup Now")
-            }
-
-            Button(
-                onClick = {
-                    authManager.signOut()
-                    onUpdate(GoogleSettings())
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error
-                )
-            ) {
-                Icon(Icons.Default.Logout, null)
-                Spacer(Modifier.width(8.dp))
-                Text("Sign Out")
-            }
-        } else {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        "ℹ️ Why Sign In?",
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        "• Backup your inventory to Google Drive\n" +
-                                "• Access data across devices\n" +
-                                "• Never lose your data",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
-
-            Button(
-                onClick = onSignInClick,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF4285F4)
-                )
-            ) {
-                Icon(Icons.Default.Login, null)
-                Spacer(Modifier.width(8.dp))
-                Text("Sign in with Google")
-            }
-        }
-    }
-}
-
-@Composable
-fun DataManagementContent(
-    autoFeatures: AutoFeatures,
-    onRequestPermissions: () -> Unit,
-    onUpdate: (AutoFeatures) -> Unit,
-    onExport: () -> Unit,
-    onImport: () -> Unit,
-    onLocalSaveNow: () -> Unit
-) {
-    val context = LocalContext.current
-    val hasStoragePermission = remember {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            Environment.isExternalStorageManager()
-        } else {
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-            ) == PackageManager.PERMISSION_GRANTED
-        }
-    }
-
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        if (!hasStoragePermission) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.Warning,
-                            "Warning",
-                            tint = MaterialTheme.colorScheme.error
-                        )
+                        Icon(Icons.Default.Warning, "Warning", tint = MaterialTheme.colorScheme.error)
                         Spacer(Modifier.width(8.dp))
-                        Text(
-                            "Storage Permission Required",
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
+                        Text("Storage Permission Required", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onErrorContainer)
                     }
-                    Text(
-                        "To save data locally, grant storage access",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onErrorContainer
-                    )
+                    Text("To import or export data files, the app needs storage access.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onErrorContainer)
                     Button(
-                        onClick = onRequestPermissions,
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error
-                        )
+                        onClick = onRequestPermissions, modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                     ) {
                         Icon(Icons.Default.Folder, null)
                         Spacer(Modifier.width(8.dp))
@@ -1036,176 +467,77 @@ fun DataManagementContent(
         } else {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.CheckCircle,
-                        "Granted",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+                Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.CheckCircle, "Granted", tint = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.width(12.dp))
-                    Text(
-                        "✅ Storage Permission Granted",
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
+                    Text("✅ Storage Permission Granted", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onPrimaryContainer)
                 }
             }
         }
 
-        HorizontalDivider()
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-        SwitchRow("📦 Auto Local Save", autoFeatures.autoLocalSave) {
-            onUpdate(autoFeatures.copy(autoLocalSave = it))
-        }
-        SwitchRow("☁️ Auto Google Backup", autoFeatures.autoGoogleBackup) {
-            onUpdate(autoFeatures.copy(autoGoogleBackup = it))
-        }
-
-        if (autoFeatures.lastLocalSaveTime > 0) {
-            Text(
-                "Last local save: ${SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault()).format(Date(autoFeatures.lastLocalSaveTime))}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        Button(
-            onClick = onLocalSaveNow,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Icon(Icons.Default.Save, null)
-            Spacer(Modifier.width(8.dp))
-            Text("Save Locally Now")
-        }
-
-        HorizontalDivider()
-
+        Text("Backup & Restore (JSON)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("Use a JSON file to create a complete backup of your app data or restore from a previous backup.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(
-                onClick = onExport,
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(Icons.Default.Upload, null)
-                Spacer(Modifier.width(4.dp))
-                Text("Export")
-            }
-            OutlinedButton(
-                onClick = onImport,
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(Icons.Default.Download, null)
-                Spacer(Modifier.width(4.dp))
+            OutlinedButton(onClick = onImportJson, modifier = Modifier.weight(1f), enabled = hasPermission) {
+                Icon(Icons.Default.Download, null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                Spacer(Modifier.width(8.dp))
                 Text("Import")
             }
+            OutlinedButton(onClick = onExportJson, modifier = Modifier.weight(1f), enabled = hasPermission) {
+                Icon(Icons.Default.Upload, null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                Spacer(Modifier.width(8.dp))
+                Text("Export")
+            }
+        }
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+        Text("Export for Spreadsheet (CSV)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("Export your item list as a CSV file to open in Excel or Google Sheets.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+        Button(onClick = onExportCsv, modifier = Modifier.fillMaxWidth(), enabled = hasPermission) {
+            Icon(Icons.Default.Upload, null)
+            Spacer(Modifier.width(8.dp))
+            Text("Export Items to CSV")
         }
     }
 }
 
 @Composable
-fun APIKeyField(label: String, value: String, onValueChange: (String) -> Unit) {
-    var showKey by remember { mutableStateOf(false) }
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        modifier = Modifier.fillMaxWidth(),
-        visualTransformation = if (showKey)
-            VisualTransformation.None
-        else
-            PasswordVisualTransformation(),
-        trailingIcon = {
-            IconButton({ showKey = !showKey }) {
-                Icon(
-                    if (showKey) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                    if (showKey) "Hide" else "Show"
-                )
-            }
-        },
-        singleLine = true
-    )
-}
-
-@Composable
-fun SwitchRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clickable { onCheckedChange(!checked) }
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(label, Modifier.weight(1f))
-        Switch(checked, onCheckedChange)
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CustomThemeDialog(
-    currentTheme: CustomTheme,
-    onDismiss: () -> Unit,
-    onConfirm: (CustomTheme) -> Unit
+private fun CustomThemeDialog(
+    currentTheme: CustomTheme, onDismiss: () -> Unit, onConfirm: (CustomTheme) -> Unit
 ) {
     var theme by remember { mutableStateOf(currentTheme) }
     var fontSizeScale by remember { mutableFloatStateOf(currentTheme.fontSizeScale) }
 
     val colorOptions = listOf(
-        "Red" to Color(0xFFE53E3E),
-        "Orange" to Color(0xFFDD6B20),
-        "Yellow" to Color(0xFFD69E2E),
-        "Green" to Color(0xFF38A169),
-        "Teal" to Color(0xFF319795),
-        "Blue" to Color(0xFF3182CE),
-        "Purple" to Color(0xFF805AD5),
-        "Pink" to Color(0xFFD53F8C)
+        "Red" to Color(0xFFE53E3E), "Orange" to Color(0xFFDD6B20),
+        "Yellow" to Color(0xFFD69E2E), "Green" to Color(0xFF38A169),
+        "Teal" to Color(0xFF319795), "Blue" to Color(0xFF3182CE),
+        "Purple" to Color(0xFF805AD5), "Pink" to Color(0xFFD53F8C)
     )
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("🎨 Custom Theme") },
         text = {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                item {
-                    Text("Select Primary Color", fontWeight = FontWeight.Bold)
-                }
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                item { Text("Select Primary Color", fontWeight = FontWeight.Bold) }
                 item {
                     colorOptions.chunked(4).forEach { rowColors ->
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            rowColors.forEach { (name, color) ->
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            rowColors.forEach { (_, color) ->
                                 Box(
-                                    Modifier
-                                        .weight(1f)
-                                        .aspectRatio(1f)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(color)
-                                        .clickable {
-                                            theme = theme.copy(
-                                                primaryColor = color.toArgb().toLong()
-                                            )
-                                        },
+                                    Modifier.weight(1f).aspectRatio(1f).clip(RoundedCornerShape(12.dp))
+                                        .background(color).clickable { theme = theme.copy(primaryColor = color.toArgb().toLong()) },
                                     contentAlignment = Alignment.Center
                                 ) {
                                     if (Color(theme.primaryColor.toULong()) == color) {
-                                        Icon(
-                                            Icons.Default.Check,
-                                            null,
-                                            tint = Color.White,
-                                            modifier = Modifier.size(24.dp)
-                                        )
+                                        Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(24.dp))
                                     }
                                 }
                             }
@@ -1213,144 +545,128 @@ fun CustomThemeDialog(
                         Spacer(Modifier.height(8.dp))
                     }
                 }
-
                 item { HorizontalDivider(Modifier.padding(vertical = 8.dp)) }
-
+                item { Text("Select Background", fontWeight = FontWeight.Bold) }
                 item {
-                    Text("Select Background", fontWeight = FontWeight.Bold)
-                }
-                item {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        listOf(
-                            "Light" to Color(0xFFFFFFFF),
-                            "Dark" to Color(0xFF1A202C)
-                        ).forEach { (name, color) ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        listOf("Light" to Color(0xFFFFFFFF), "Dark" to Color(0xFF1A202C)).forEach { (name, color) ->
                             Box(
-                                Modifier
-                                    .weight(1f)
-                                    .height(60.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(color)
-                                    .clickable {
-                                        theme = theme.copy(
-                                            backgroundColor = color.toArgb().toLong()
-                                        )
-                                    },
+                                Modifier.weight(1f).height(60.dp).clip(RoundedCornerShape(12.dp))
+                                    .background(color).clickable { theme = theme.copy(backgroundColor = color.toArgb().toLong()) },
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    name,
-                                    color = if (color == Color.White) Color.Black else Color.White,
-                                    fontWeight = if (Color(theme.backgroundColor.toULong()) == color)
-                                        FontWeight.Bold else FontWeight.Normal
-                                )
+                                Text(name, color = if (color == Color.White) Color.Black else Color.White,
+                                    fontWeight = if (Color(theme.backgroundColor.toULong()) == color) FontWeight.Bold else FontWeight.Normal)
                             }
                         }
                     }
                 }
-
                 item { HorizontalDivider(Modifier.padding(vertical = 8.dp)) }
-
-                item {
-                    Text("Font & Icon Size Scale", fontWeight = FontWeight.Bold)
-                }
+                item { Text("Font & Icon Size Scale", fontWeight = FontWeight.Bold) }
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Slider(
-                            value = fontSizeScale,
-                            onValueChange = { fontSizeScale = it },
-                            valueRange = 0.8f..1.5f,
-                            steps = 13,
-                            modifier = Modifier.fillMaxWidth()
+                            value = fontSizeScale, onValueChange = { fontSizeScale = it }, valueRange = 0.8f..1.5f,
+                            steps = 13, modifier = Modifier.fillMaxWidth()
                         )
-                        Text(
-                            "Scale: %.2f (0.8x to 1.5x)".format(fontSizeScale),
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                        Text(String.format(Locale.US, "Scale: %.2f (0.8x to 1.5x)", fontSizeScale), style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
         },
-        confirmButton = {
-            Button({
-                onConfirm(theme.copy(fontSizeScale = fontSizeScale))
-            }) { Text("Apply Theme") }
-        },
-        dismissButton = {
-            TextButton(onDismiss) { Text("Cancel") }
-        }
+        confirmButton = { Button({ onConfirm(theme.copy(fontSizeScale = fontSizeScale)) }) { Text("Apply Theme") } },
+        dismissButton = { TextButton(onDismiss) { Text("Cancel") } }
     )
 }
 
 @Composable
-fun ProviderPriorityItem(
-    name: String,
-    priority: Int,
-    onMoveUp: (() -> Unit)?,
-    onMoveDown: (() -> Unit)?
+private fun ThemeSettingsContent(
+    settings: AppSettings, onThemeChange: (AppTheme) -> Unit, onFontSizeChange: (FontSize) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("Select Theme", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+        val themeItems = listOf(
+            "☀️ Light" to AppTheme.LIGHT, "🌙 Dark" to AppTheme.DARK, "🧛 Dracula" to AppTheme.DRACULA,
+            "🌊 Ocean" to AppTheme.OCEAN, "🌲 Forest" to AppTheme.FOREST, "🌅 Sunset" to AppTheme.SUNSET
+        )
+        themeItems.chunked(2).forEach { rowItems ->
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                rowItems.forEach { (name, theme) ->
+                    ThemePresetCard(
+                        name = name, color = getThemeColor(theme), isSelected = settings.theme == theme,
+                        onClick = { onThemeChange(theme) }, modifier = Modifier.weight(1f)
+                    )
+                }
+                if (rowItems.size == 1) Spacer(modifier = Modifier.weight(1f))
+            }
+        }
+        HorizontalDivider(Modifier.padding(vertical = 12.dp))
+        Text("Font Size", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FontSize.entries.forEach { size ->
+                FontSizeButton(size.name.lowercase().replaceFirstChar { it.uppercase() }, settings.fontSize == size) { onFontSizeChange(size) }
+            }
+        }
+        Text("Current size: ${settings.fontSize.name} (${String.format(Locale.US, "%.2f", settings.fontSize.scale)}x)",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp)
+        )
+    }
+}
+
+private fun getThemeColor(theme: AppTheme): Color {
+    return when (theme) {
+        AppTheme.LIGHT -> Color(0xFFE3F2FD)
+        AppTheme.DARK -> Color(0xFF212121)
+        AppTheme.DRACULA -> Color(0xFFBD93F9)
+        AppTheme.OCEAN -> Color(0xFF00B4D8)
+        AppTheme.FOREST -> Color(0xFF2D6A4F)
+        AppTheme.SUNSET -> Color(0xFFFF6B35)
+        AppTheme.VAMPIRE -> Color(0xFFFF1493)
+        AppTheme.CYBERPUNK -> Color(0xFFFF006E)
+        AppTheme.NEON -> Color(0xFF39FF14)
+        AppTheme.SYSTEM -> Color(0xFF808080)
+        AppTheme.CUSTOM -> Color(0xFF6200EE)
+    }
+}
+
+@Composable
+private fun ThemePresetCard(
+    name: String, color: Color, isSelected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        modifier = modifier.height(60.dp).clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.2f)),
+        border = if (isSelected) BorderStroke(3.dp, color) else null
     ) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+        Box(
+            modifier = Modifier.fillMaxSize().background(Brush.linearGradient(listOf(color.copy(0.4f), color.copy(0.1f)))),
+            contentAlignment = Alignment.Center
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        priority.toString(),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
-                }
-                Spacer(Modifier.width(12.dp))
-                Text(name, fontWeight = FontWeight.Medium)
-            }
-            Row {
-                IconButton(
-                    onClick = { onMoveUp?.invoke() },
-                    enabled = onMoveUp != null
-                ) {
-                    Icon(
-                        Icons.Default.ArrowUpward,
-                        "Move Up",
-                        tint = if (onMoveUp != null)
-                            MaterialTheme.colorScheme.primary
-                        else
-                            Color.Gray
-                    )
-                }
-                IconButton(
-                    onClick = { onMoveDown?.invoke() },
-                    enabled = onMoveDown != null
-                ) {
-                    Icon(
-                        Icons.Default.ArrowDownward,
-                        "Move Down",
-                        tint = if (onMoveDown != null)
-                            MaterialTheme.colorScheme.primary
-                        else
-                            Color.Gray
-                    )
+                Text(name, color = if (themeIsDark(color)) Color.White else Color.Black, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                if (isSelected) {
+                    Spacer(Modifier.width(4.dp))
+                    Icon(Icons.Default.Check, null, tint = color, modifier = Modifier.size(14.dp))
                 }
             }
         }
+    }
+}
+
+private fun themeIsDark(color: Color): Boolean {
+    val darkness = 1 - (0.299 * color.red + 0.587 * color.green + 0.114 * color.blue)
+    return darkness >= 0.5
+}
+
+@Composable
+private fun RowScope.FontSizeButton(text: String, selected: Boolean, onClick: () -> Unit) {
+    Button(
+        onClick, Modifier.weight(1f),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    ) {
+        Text(text, fontSize = 11.sp, maxLines = 1)
     }
 }

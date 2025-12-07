@@ -1,7 +1,6 @@
 package com.samuel.inventorymanager.screens
 
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
@@ -29,7 +28,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -47,6 +46,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 
 @Composable
 fun HelpScreen() {
@@ -60,7 +60,9 @@ fun HelpScreen() {
         item {
             // --- HEADER ---
             Column(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text("❓", fontSize = 56.sp)
@@ -132,7 +134,7 @@ fun HelpScreen() {
         // --- DATA & BACKUP ---
         item {
             CollapsibleHelpSection(
-                title = "Data, Backup & Sync",
+                title = "Data, Backup &                     (Sync COMING SOON...)",
                 icon = Icons.Default.SdStorage
             ) {
                 HelpContentBlock(
@@ -181,11 +183,13 @@ fun HelpScreen() {
                         Spacer(Modifier.width(12.dp))
                         Text("App Information", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     }
-                    InfoRow("Version:", "2.0 (Native)")
-                    InfoRow("Platform:", "Android (Jetpack Compose)")
-                    InfoRow("Data Storage:", "Local Device Storage")
+                    // FIX: Renamed InfoRow to AppInfoRow to solve overload ambiguity
+                    AppInfoRow("Version:", "1.0 (FIRST)")
+                    AppInfoRow("Platform:", "Android (Jetpack Compose)")
+                    AppInfoRow("Data Storage:", "Local Device Storage")
 
-                    Divider(modifier = Modifier.padding(vertical = 8.dp))
+                    // FIX: Replaced deprecated Divider with HorizontalDivider
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                     // Contact Section
                     ContactRow(
@@ -193,7 +197,8 @@ fun HelpScreen() {
                         title = "GitHub of Parminder",
                         subtitle = "github.com/JohnJackson12",
                         onClick = {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/JohnJackson12"))
+                            // FIX: Use .toUri() KTX extension
+                            val intent = Intent(Intent.ACTION_VIEW, "https://github.com/JohnJackson12".toUri())
                             context.startActivity(intent)
                         }
                     )
@@ -203,7 +208,8 @@ fun HelpScreen() {
                         title = "GitHub of Samuel",
                         subtitle = "github.com/SamS34",
                         onClick = {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/SamS34"))
+                            // FIX: Use .toUri() KTX extension
+                            val intent = Intent(Intent.ACTION_VIEW, "https://github.com/SamS34".toUri())
                             context.startActivity(intent)
                         }
                     )
@@ -214,7 +220,8 @@ fun HelpScreen() {
                         subtitle = "parminder.nz@gmail.com",
                         onClick = {
                             val intent = Intent(Intent.ACTION_SENDTO).apply {
-                                data = Uri.parse("mailto:parminder.nz@gmail.com")
+                                // FIX: Use .toUri() KTX extension
+                                data = "mailto:parminder.nz@gmail.com".toUri()
                             }
                             context.startActivity(intent)
                         }
@@ -226,7 +233,8 @@ fun HelpScreen() {
                         subtitle = "sam.of.s34@gmail.com",
                         onClick = {
                             val intent = Intent(Intent.ACTION_SENDTO).apply {
-                                data = Uri.parse("mailto:sam.of.s34@gmail.com")
+                                // FIX: Use .toUri() KTX extension
+                                data = "mailto:sam.of.s34@gmail.com".toUri()
                             }
                             context.startActivity(intent)
                         }
@@ -239,7 +247,7 @@ fun HelpScreen() {
 
 
 // ======================================================================
-//                              HELPER COMPOSABLES
+//                              Helper Composables
 // These are the reusable building blocks that make the screen work! ✨
 // ======================================================================
 
@@ -291,7 +299,8 @@ private fun CollapsibleHelpSection(
                         .fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Divider()
+                    // FIX: Replaced deprecated Divider with HorizontalDivider
+                    HorizontalDivider()
                     Spacer(Modifier.height(4.dp))
                     content()
                 }
@@ -332,7 +341,9 @@ private fun ContactRow(
     onClick: () -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(icon, null, modifier = Modifier.size(32.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -352,9 +363,10 @@ private fun ContactRow(
 
 /**
  * Displays a simple "Label: Value" row for app information.
+ * FIX: Renamed from InfoRow to AppInfoRow to resolve compiler ambiguity.
  */
 @Composable
-private fun InfoRow(label: String, value: String) {
+private fun AppInfoRow(label: String, value: String) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(
             text = label,
