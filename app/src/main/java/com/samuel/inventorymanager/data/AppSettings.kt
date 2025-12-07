@@ -2,14 +2,16 @@ package com.samuel.inventorymanager.data
 
 // Theme and appearance settings
 enum class AppTheme {
-    LIGHT, DARK, SYSTEM, CUSTOM
+    LIGHT, DARK, SYSTEM,
+    DRACULA, VAMPIRE, OCEAN, FOREST, SUNSET, CYBERPUNK, NEON,
+    CUSTOM
 }
 
 enum class FontSize(val scale: Float) {
     SMALL(0.85f),
     MEDIUM(1.0f),
-    LARGE(1.15f),
-    EXTRA_LARGE(1.3f)
+    LARGE(1.3f),
+    EXTRA_LARGE(1.5f)
 }
 
 data class CustomTheme(
@@ -17,38 +19,50 @@ data class CustomTheme(
     val backgroundColor: Long = 0xFFFFFFFF,
     val surfaceColor: Long = 0xFFFFFFFF,
     val onPrimaryColor: Long = 0xFFFFFFFF,
-    val fontSizeScale: Float = 1.0f  // NEW: Font scaling for custom theme
+    val fontSizeScale: Float = 1.0f
 )
 
 // OCR Provider enum
 enum class OCRProvider {
-    ROBOFLOW, OCR_SPACE, GOOGLE_VISION
+    TESSERACT_JS,
+    ROBOFLOW,
+    OCR_SPACE,
+    OPTIIC,
+    GOOGLE_VISION
 }
 
 // AI Provider enum
 enum class AIProvider {
-    GOOGLE_GEMINI, OPENAI
+    GOOGLE_GEMINI,
+    OPENAI,
+    SMART_OFFLINE
 }
 
-// OCR settings with priority
+// OCR settings with priority - FIXED to include ALL providers
 data class OCRSettings(
     val roboflowApiKey: String = "",
     val ocrSpaceApiKey: String = "",
     val googleVisionApiKey: String = "",
+    val optiicApiKey: String = "",
     val providerPriority: List<OCRProvider> = listOf(
+        OCRProvider.TESSERACT_JS,
         OCRProvider.ROBOFLOW,
         OCRProvider.OCR_SPACE,
+        OCRProvider.OPTIIC,
         OCRProvider.GOOGLE_VISION
     )
 )
 
-// AI settings with priority
+// AI settings with priority - FIXED to include ALL providers
 data class AISettings(
+
+    val anthropicApiKey: String = "", // Add this field
     val googleGeminiApiKey: String = "",
     val openAIApiKey: String = "",
     val providerPriority: List<AIProvider> = listOf(
         AIProvider.GOOGLE_GEMINI,
-        AIProvider.OPENAI
+        AIProvider.OPENAI,
+        AIProvider.SMART_OFFLINE
     )
 )
 
@@ -57,14 +71,14 @@ data class GoogleSettings(
     val signedIn: Boolean = false,
     val userEmail: String = "",
     val autoBackupToDrive: Boolean = false,
-    val lastBackupTime: Long = 0  // NEW: Track last backup timestamp
+    val lastBackupTime: Long = 0
 )
 
 // Auto features settings
 data class AutoFeatures(
     val autoGoogleBackup: Boolean = false,
     val autoLocalSave: Boolean = true,
-    val lastLocalSaveTime: Long = 0  // NEW: Track last local save timestamp
+    val lastLocalSaveTime: Long = 0
 )
 
 // COMPLETE AppSettings with ALL properties

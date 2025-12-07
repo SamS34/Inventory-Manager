@@ -1,24 +1,21 @@
+// In your C:\Garage\AndroidStudioCode\settings.gradle.kts file
+
 pluginManagement {
     repositories {
-        google {
-            content {
-                includeGroupByRegex("com\\.android.*")
-                includeGroupByRegex("com\\.google.*")
-                includeGroupByRegex("androidx.*")
-            }
-        }
+        google()
         mavenCentral()
         gradlePluginPortal()
     }
 }
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
-        mavenCentral()
+        mavenCentral() // THIS IS CRITICAL
+        maven("https://jitpack.io")
     }
 }
 
-rootProject.name = "InventoryManager"
+rootProject.name = "Inventory Manager"
 include(":app")
- 

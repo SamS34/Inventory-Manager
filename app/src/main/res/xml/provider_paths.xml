@@ -1,4 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <cache-path name="my_images" path="." />
+<paths>
+    <!--
+    This tag maps the app's internal cache directory (Context.getCacheDir()) to the FileProvider.
+    The file path you are trying to share:
+    /data/data/com.samuel.inventorymanager/cache/captured_image_...jpg
+
+    The <cache-path> tag ensures that the FileProvider recognizes files placed in the 'cache' folder.
+    'path="/"' means the entire cache folder and all its contents are accessible.
+    -->
+    <cache-path
+        name="cache_images"
+        path="/" />
+
+    <!--
+    This maps the app's external files directory, which is good practice to keep
+    if you ever switch from using the internal cache to the external storage for temporary files.
+    -->
+    <external-files-path
+        name="external_files"
+        path="." />
 </paths>

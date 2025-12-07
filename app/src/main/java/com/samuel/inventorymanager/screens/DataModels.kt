@@ -1,31 +1,51 @@
 package com.samuel.inventorymanager.screens
 
+import java.util.UUID
+
 // --- Core Data Structures ---
 data class Item(
-    val id: String,
+    val id: String = UUID.randomUUID().toString(),
     val name: String,
-    val modelNumber: String?,
-    val description: String?,
-    val webLink: String?,
-    val condition: String,
-    val functionality: String,
+    val modelNumber: String? = null,
+    val description: String? = null,
+    val webLink: String? = null,
+    val condition: String = "Good",
+    val functionality: String = "Working",
     val garageId: String,
     val cabinetId: String,
     val shelfId: String,
-    val boxId: String?,
-    val quantity: Int,
-    val minPrice: Double?,
-    val maxPrice: Double?,
-    val weight: Double?,
-    val sizeCategory: String,
-    val dimensions: String?,
-    val images: List<String>
+    val boxId: String? = null,
+    val quantity: Int = 1,
+    val minPrice: Double? = null,
+    val maxPrice: Double? = null,
+    val weight: Double? = null,
+    val sizeCategory: String = "Medium",
+    val dimensions: String? = null,
+    val images: List<String> = emptyList()
 )
 
-data class Box(val id: String, val name: String)
-data class Shelf(val id: String, val name: String, val boxes: List<Box>)
-data class Cabinet(val id: String, val name: String, val shelves: List<Shelf>)
-data class Garage(val id: String, val name: String, val cabinets: List<Cabinet>)
+data class Box(
+    val id: String = UUID.randomUUID().toString(),
+    val name: String
+)
+
+data class Shelf(
+    val id: String = UUID.randomUUID().toString(),
+    val name: String,
+    val boxes: MutableList<Box> = mutableListOf()
+)
+
+data class Cabinet(
+    val id: String = UUID.randomUUID().toString(),
+    val name: String,
+    val shelves: MutableList<Shelf> = mutableListOf()
+)
+
+data class Garage(
+    val id: String = UUID.randomUUID().toString(),
+    val name: String,
+    val cabinets: MutableList<Cabinet> = mutableListOf()
+)
 
 // --- History Tracking ---
 sealed class HistoryAction {
@@ -38,17 +58,17 @@ sealed class HistoryAction {
 }
 
 data class HistoryEntry(
-    val id: String,
+    val id: String = UUID.randomUUID().toString(),
     val itemId: String,
     val itemName: String,
-    val action: HistoryAction,
+    val actionType: String,
     val description: String,
     val timestamp: Long = System.currentTimeMillis()
 )
 
 // --- App Data Bundle for Saving/Loading ---
 data class AppData(
-    val garages: List<Garage>,
-    val items: List<Item>,
-    val history: List<HistoryEntry>
+    val garages: List<Garage> = emptyList(),
+    val items: List<Item> = emptyList(),
+    val history: List<HistoryEntry> = emptyList()
 )

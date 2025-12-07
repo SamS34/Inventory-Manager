@@ -1,16 +1,12 @@
 package com.samuel.inventorymanager.ui.theme
 
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -20,18 +16,19 @@ import androidx.compose.ui.unit.sp
 // COLOR DEFINITIONS
 // ========================================================================================
 
+// Base Theme Colors
 private val PurpleLight40 = Color(0xFF6650a4)
 private val PurpleGreyLight40 = Color(0xFF625b71)
 private val PinkLight40 = Color(0xFF7D5260)
 
-private val PurpleDark80 = Color(0xFFEADDF5)
-private val PurpleGreyDark80 = Color(0xFFCCC7DB)
+private val PurpleDark80 = Color(0xFFD0BCFF)
+private val PurpleGreyDark80 = Color(0xFFCCC2DC)
 private val PinkDark80 = Color(0xFFEFB8C8)
 
-// Additional Theme Colors
 private val LightBackground = Color(0xFFFFFBFE)
 private val DarkBackground = Color(0xFF1A1A1A)
 
+// Custom Theme Primary Colors
 private val DraculaPrimary = Color(0xFFBD93F9)
 private val VampirePrimary = Color(0xFFFF1493)
 private val OceanPrimary = Color(0xFF00B4D8)
@@ -39,6 +36,19 @@ private val ForestPrimary = Color(0xFF2D6A4F)
 private val SunsetPrimary = Color(0xFFFF6B35)
 private val CyberpunkPrimary = Color(0xFFFF006E)
 private val NeonPrimary = Color(0xFF39FF14)
+
+// New Indigo Theme Colors (from second file)
+private val IndigoPrimaryLight = Color(0xFF6366F1)
+private val EmeraldSecondaryLight = Color(0xFF10B981)
+private val RedErrorLight = Color(0xFFEF4444)
+private val SlateBackgroundLight = Color(0xFFF8FAFC)
+private val WhiteSurfaceLight = Color(0xFFFEFEFE)
+
+private val IndigoPrimaryDark = Color(0xFF818CF8) // Lighter indigo for dark mode
+private val EmeraldSecondaryDark = Color(0xFF34D399) // Lighter emerald for dark mode
+private val RedErrorDark = Color(0xFFF87171) // Lighter red for dark mode
+private val SlateBackgroundDark = Color(0xFF0F172A) // Dark slate for background
+private val SlateSurfaceDark = Color(0xFF1E293B) // Slightly lighter slate for surface
 
 // ========================================================================================
 // COLOR SCHEMES
@@ -69,6 +79,24 @@ private val DarkColorScheme = darkColorScheme(
     onBackground = Color.White,
     onSurface = Color.White
 )
+
+// New Indigo Theme Scheme
+private val IndigoLightScheme = lightColorScheme(
+    primary = IndigoPrimaryLight,
+    secondary = EmeraldSecondaryLight,
+    error = RedErrorLight,
+    background = SlateBackgroundLight,
+    surface = WhiteSurfaceLight
+)
+
+private val IndigoDarkScheme = darkColorScheme(
+    primary = IndigoPrimaryDark,
+    secondary = EmeraldSecondaryDark,
+    error = RedErrorDark,
+    background = SlateBackgroundDark,
+    surface = SlateSurfaceDark
+)
+
 
 private val DraculaLightScheme = lightColorScheme(
     primary = DraculaPrimary,
@@ -272,7 +300,7 @@ fun getScaledTypography(scale: Float): Typography {
 // ========================================================================================
 
 enum class AppThemeType {
-    LIGHT, DARK, DRACULA, VAMPIRE, OCEAN, FOREST, SUNSET, CYBERPUNK, NEON
+    LIGHT, DARK, INDIGO, DRACULA, VAMPIRE, OCEAN, FOREST, SUNSET, CYBERPUNK, NEON
 }
 
 // ========================================================================================
@@ -284,25 +312,19 @@ fun InventoryManagerTheme(
     themeType: AppThemeType = AppThemeType.LIGHT,
     darkTheme: Boolean = isSystemInDarkTheme(),
     fontScale: Float = 1.0f,
-    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        themeType == AppThemeType.LIGHT -> LightColorScheme
-        themeType == AppThemeType.DARK -> DarkColorScheme
-        themeType == AppThemeType.DRACULA -> if (darkTheme) DraculaDarkScheme else DraculaLightScheme
-        themeType == AppThemeType.VAMPIRE -> if (darkTheme) VampireDarkScheme else VampireLightScheme
-        themeType == AppThemeType.OCEAN -> if (darkTheme) OceanDarkScheme else OceanLightScheme
-        themeType == AppThemeType.FOREST -> if (darkTheme) ForestDarkScheme else ForestLightScheme
-        themeType == AppThemeType.SUNSET -> if (darkTheme) SunsetDarkScheme else SunsetLightScheme
-        themeType == AppThemeType.CYBERPUNK -> if (darkTheme) CyberpunkDarkScheme else CyberpunkLightScheme
-        themeType == AppThemeType.NEON -> if (darkTheme) NeonDarkScheme else NeonLightScheme
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+    val colorScheme = when (themeType) {
+        AppThemeType.LIGHT -> LightColorScheme
+        AppThemeType.DARK -> DarkColorScheme
+        AppThemeType.INDIGO -> if (darkTheme) IndigoDarkScheme else IndigoLightScheme
+        AppThemeType.DRACULA -> if (darkTheme) DraculaDarkScheme else DraculaLightScheme
+        AppThemeType.VAMPIRE -> if (darkTheme) VampireDarkScheme else VampireLightScheme
+        AppThemeType.OCEAN -> if (darkTheme) OceanDarkScheme else OceanLightScheme
+        AppThemeType.FOREST -> if (darkTheme) ForestDarkScheme else ForestLightScheme
+        AppThemeType.SUNSET -> if (darkTheme) SunsetDarkScheme else SunsetLightScheme
+        AppThemeType.CYBERPUNK -> if (darkTheme) CyberpunkDarkScheme else CyberpunkLightScheme
+        AppThemeType.NEON -> if (darkTheme) NeonDarkScheme else NeonLightScheme
     }
 
     val scaledTypography = getScaledTypography(fontScale)
