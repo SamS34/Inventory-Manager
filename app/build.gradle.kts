@@ -109,6 +109,8 @@ dependencies {
     // THIS VERSION EXISTS. MY OLD ONE DID NOT.
     implementation("com.google.mlkit:image-labeling:17.0.8")
     implementation("com.google.mlkit:object-detection:17.0.1")
+    implementation("com.vanniktech:android-image-cropper:4.5.0")
+
 
     // --- JSON Parsing (WITH CORRECT VERSION) ---
     implementation("com.google.code.gson:gson:2.10.1")

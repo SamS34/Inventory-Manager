@@ -26,16 +26,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.Dashboard
-import androidx.compose.material.icons.filled.FilterAlt
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Inventory
-import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Psychology
-import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -65,8 +61,10 @@ import androidx.compose.ui.unit.sp
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.HorizontalPagerIndicator
+import com.google.accompanist.pager.PagerState
 import com.google.accompanist.pager.rememberPagerState
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
@@ -74,16 +72,20 @@ fun OnboardingScreen(
     onGetStarted: () -> Unit,
     onSignInWithGoogle: () -> Unit
 ) {
-    var currentPage by remember { mutableStateOf(0) }
     val pagerState = rememberPagerState()
     val scope = rememberCoroutineScope()
 
-    // Auto-advance pages
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(5000) // 5 seconds per page
-            val nextPage = (pagerState.currentPage + 1) % 5
-            pagerState.animateScrollToPage(nextPage)
+    // Total pages: 6 feature pages + 1 sign-in page
+    val totalPages = 7
+    val isLastPage = pagerState.currentPage == totalPages - 1
+
+    // Auto-advance only on feature pages (not the sign-in page)
+    LaunchedEffect(pagerState.currentPage) {
+        if (pagerState.currentPage < totalPages - 1) {
+            delay(5000)
+            if (pagerState.currentPage < totalPages - 2) {
+                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+            }
         }
     }
 
@@ -104,51 +106,106 @@ fun OnboardingScreen(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Top App Logo & Title
+            // Animated App Header
             AnimatedAppHeader()
 
-            // Horizontal Pager for feature showcase
+            // Horizontal Pager
             HorizontalPager(
-                count = 5,
+                count = totalPages,
                 state = pagerState,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
             ) { page ->
-                OnboardingPage(
-                    page = when (page) {
-                        0 -> OnboardingPageData(
+                when (page) {
+                    0 -> OnboardingPage(
+                        OnboardingPageData(
                             icon = Icons.Default.Inventory,
                             title = "Welcome to Android Inventory Pro",
-                            description = "The ultimate solution for organizing everything you own. From your garage tools to your kitchen supplies, never lose track of anything again!",
-                            emoji = "📦"
+                            description = "The ultimate solution for organizing everything you own. From garage tools to kitchen supplies, never lose track of anything again! Create a digital inventory with photos, locations, and detailed information.",
+                            emoji = "📦",
+                            features = listOf(
+                                "📱 Works completely offline",
+                                "🔒 Your data stays private",
+                                "🎯 Simple and intuitive design"
+                            )
                         )
-                        1 -> OnboardingPageData(
+                    )
+                    1 -> OnboardingPage(
+                        OnboardingPageData(
                             icon = Icons.Default.LocationOn,
-                            title = "Smart Location Hierarchy",
-                            description = "Create Garages → Cabinets → Shelves → Boxes. Know exactly where every item is stored with our intuitive 4-level organization system.",
-                            emoji = "🏠"
+                            title = "Smart 4-Level Location Hierarchy",
+                            description = "Know exactly where everything is stored with our intuitive organization system:",
+                            emoji = "🏠",
+                            features = listOf(
+                                "🏢 Garage: Main storage areas (Workshop, Kitchen, etc.)",
+                                "🗄️ Cabinet: Containers within garages",
+                                "📚 Shelf: Sections within cabinets",
+                                "📦 Box: Individual storage boxes"
+                            )
                         )
-                        2 -> OnboardingPageData(
+                    )
+                    2 -> OnboardingPage(
+                        OnboardingPageData(
                             icon = Icons.Default.CameraAlt,
-                            title = "AI-Powered Recognition",
-                            description = "Take a photo and let our AI do the work! Automatically detect item names, model numbers, and descriptions. Save hours of manual data entry.",
-                            emoji = "🤖"
+                            title = "AI-Powered Item Recognition",
+                            description = "Take a photo and let AI do the heavy lifting! Automatically detect item names, model numbers, and descriptions.",
+                            emoji = "🤖",
+                            features = listOf(
+                                "📸 Camera integration for quick photos",
+                                "🔍 OCR text extraction from images",
+                                "🧠 AI identifies items automatically",
+                                "⚡ Save hours of manual data entry"
+                            )
                         )
-                        3 -> OnboardingPageData(
+                    )
+                    3 -> OnboardingPage(
+                        OnboardingPageData(
                             icon = Icons.Default.Search,
-                            title = "Instant Search & Filters",
-                            description = "Find any item in seconds with powerful search. Filter by location, condition, tags, and more. Your entire inventory at your fingertips!",
-                            emoji = "🔍"
+                            title = "Powerful Search & Filtering",
+                            description = "Find any item in seconds with advanced search capabilities and smart filters.",
+                            emoji = "🔍",
+                            features = listOf(
+                                "🎯 Instant item search",
+                                "🏷️ Filter by location, condition, tags",
+                                "📊 Overview dashboard with spreadsheet view",
+                                "⚡ Your entire inventory at your fingertips"
+                            )
                         )
-                        else -> OnboardingPageData(
-                            icon = Icons.Default.Cloud,
-                            title = "Secure Cloud Backup",
-                            description = "Never lose your data! Sign in with Google to automatically backup your inventory to Google Drive. Sync across all your devices seamlessly.",
-                            emoji = "☁️"
+                    )
+                    4 -> OnboardingPage(
+                        OnboardingPageData(
+                            icon = Icons.Default.Edit,
+                            title = "Smart Auto-Save & Custom Fields",
+                            description = "The app works intelligently to make data entry effortless and flexible.",
+                            emoji = "💾",
+                            features = listOf(
+                                "⚡ Auto-save after you stop typing",
+                                "✏️ Add custom condition options",
+                                "🎨 Create custom functionality states",
+                                "📝 All changes saved automatically"
+                            )
                         )
-                    }
-                )
+                    )
+                    5 -> OnboardingPage(
+                        OnboardingPageData(
+                            icon = Icons.Default.Backup,
+                            title = "Data Backup & Export",
+                            description = "Never lose your inventory data with multiple backup options.",
+                            emoji = "☁️",
+                            features = listOf(
+                                "💾 Export data as JSON files",
+                                "📥 Import data from backups",
+                                "🔄 Sync with desktop companion app",
+                                "☁️ Google Drive backup (with sign-in)"
+                            )
+                        )
+                    )
+                    6 -> SignInPage(
+                        onSignInWithGoogle = onSignInWithGoogle,
+                        onContinueWithoutSignIn = onGetStarted
+                    )
+                }
             }
 
             // Page Indicators
@@ -159,10 +216,20 @@ fun OnboardingScreen(
                 inactiveColor = Color.White.copy(alpha = 0.3f)
             )
 
-            // Bottom Action Section
-            BottomActionSection(
-                onSignInWithGoogle = onSignInWithGoogle,
-                onContinueWithoutSignIn = onGetStarted
+            // Navigation Buttons
+            BottomNavigationButtons(
+                pagerState = pagerState,
+                totalPages = totalPages,
+                onSkip = {
+                    scope.launch {
+                        pagerState.animateScrollToPage(totalPages - 1)
+                    }
+                },
+                onNext = {
+                    scope.launch {
+                        pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                    }
+                }
             )
         }
     }
@@ -187,7 +254,6 @@ private fun AnimatedAppHeader() {
             .padding(top = 48.dp, bottom = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // App Icon Placeholder (you can replace with actual drawable)
         Surface(
             modifier = Modifier
                 .size(100.dp)
@@ -199,10 +265,7 @@ private fun AnimatedAppHeader() {
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    "📦",
-                    fontSize = 48.sp
-                )
+                Text("📦", fontSize = 48.sp)
             }
         }
 
@@ -229,7 +292,8 @@ data class OnboardingPageData(
     val icon: ImageVector,
     val title: String,
     val description: String,
-    val emoji: String
+    val emoji: String,
+    val features: List<String> = emptyList()
 )
 
 @Composable
@@ -255,8 +319,8 @@ private fun OnboardingPage(page: OnboardingPageData) {
             // Large Emoji
             Text(
                 page.emoji,
-                fontSize = 80.sp,
-                modifier = Modifier.padding(bottom = 24.dp)
+                fontSize = 72.sp,
+                modifier = Modifier.padding(bottom = 16.dp)
             )
 
             // Icon
@@ -287,7 +351,7 @@ private fun OnboardingPage(page: OnboardingPageData) {
                 fontWeight = FontWeight.Bold,
                 color = Color.White,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(bottom = 12.dp)
             )
 
             // Description
@@ -296,198 +360,211 @@ private fun OnboardingPage(page: OnboardingPageData) {
                 fontSize = 16.sp,
                 color = Color.White.copy(alpha = 0.9f),
                 textAlign = TextAlign.Center,
-                lineHeight = 24.sp
+                lineHeight = 24.sp,
+                modifier = Modifier.padding(bottom = 24.dp)
             )
-        }
-    }
-}
 
-@Composable
-private fun BottomActionSection(
-    onSignInWithGoogle: () -> Unit,
-    onContinueWithoutSignIn: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                Color.White.copy(alpha = 0.1f),
-                RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
-            )
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        // Sign in with Google Button
-        Button(
-            onClick = onSignInWithGoogle,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.White,
-                contentColor = Color(0xFF1A237E)
-            )
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                // Google Icon (simplified)
-                Surface(
-                    modifier = Modifier.size(24.dp),
-                    shape = CircleShape,
-                    color = Color.Transparent
+            // Features List
+            if (page.features.isNotEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White.copy(alpha = 0.15f)
+                    )
                 ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text("G", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        page.features.forEach { feature ->
+                            Text(
+                                feature,
+                                fontSize = 14.sp,
+                                color = Color.White,
+                                lineHeight = 20.sp
+                            )
+                        }
                     }
                 }
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    "Sign in with Google",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
             }
         }
-
-        // Continue without sign in
-        TextButton(
-            onClick = onContinueWithoutSignIn,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                "Continue without signing in",
-                color = Color.White,
-                fontSize = 14.sp
-            )
-        }
-
-        // Benefits text
-        Text(
-            "Sign in to enable cloud backup and sync",
-            fontSize = 12.sp,
-            color = Color.White.copy(alpha = 0.7f),
-            textAlign = TextAlign.Center
-        )
     }
 }
 
-// ==========================================
-// Feature Highlights Composable (Alternative detailed view)
-// ==========================================
-
+@OptIn(ExperimentalPagerApi::class)
 @Composable
-fun FeatureHighlightsSection() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text(
-            "Key Features",
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        FeatureCard(
-            icon = Icons.Default.Inventory2,
-            title = "4-Level Organization",
-            description = "Garage → Cabinet → Shelf → Box hierarchy"
-        )
-
-        FeatureCard(
-            icon = Icons.Default.Psychology,
-            title = "AI Recognition",
-            description = "Auto-detect items from photos with ML Kit"
-        )
-
-        FeatureCard(
-            icon = Icons.Default.QrCode,
-            title = "Barcode & OCR",
-            description = "Scan barcodes and extract text from images"
-        )
-
-        FeatureCard(
-            icon = Icons.Default.Backup,
-            title = "Google Drive Backup",
-            description = "Automatic cloud backup with your Google account"
-        )
-
-        FeatureCard(
-            icon = Icons.Default.Dashboard,
-            title = "Overview Dashboard",
-            description = "Complete spreadsheet view of all items"
-        )
-
-        FeatureCard(
-            icon = Icons.Default.FilterAlt,
-            title = "Advanced Filters",
-            description = "Filter by location, condition, tags, and more"
-        )
-    }
-}
-
-@Composable
-private fun FeatureCard(
-    icon: ImageVector,
-    title: String,
-    description: String
+private fun BottomNavigationButtons(
+    pagerState: PagerState,
+    totalPages: Int,
+    onSkip: () -> Unit,
+    onNext: () -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.15f)
-        )
-    ) {
+    val isLastPage = pagerState.currentPage == totalPages - 1
+
+    if (!isLastPage) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 24.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(
-                modifier = Modifier.size(48.dp),
-                shape = CircleShape,
-                color = Color.White.copy(alpha = 0.2f)
+            // Skip Button
+            TextButton(onClick = onSkip) {
+                Text("Skip", color = Color.White, fontSize = 16.sp)
+            }
+
+            // Next Button
+            Button(
+                onClick = onNext,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.White,
+                    contentColor = Color(0xFF1A237E)
+                ),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                Text("Next", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.width(4.dp))
+                Icon(Icons.Default.ArrowForward, null, modifier = Modifier.size(20.dp))
+            }
+        }
+    } else {
+        Spacer(Modifier.height(16.dp))
+    }
+}
+
+@Composable
+private fun SignInPage(
+    onSignInWithGoogle: () -> Unit,
+    onContinueWithoutSignIn: () -> Unit
+) {
+    var visible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        visible = true
+    }
+
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(tween(800)) + slideInVertically(tween(800)) { it / 2 }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text("🚀", fontSize = 72.sp)
+            Spacer(Modifier.height(24.dp))
+
+            Text(
+                "You're All Set!",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            Text(
+                "Ready to start organizing your inventory?",
+                fontSize = 16.sp,
+                color = Color.White.copy(alpha = 0.9f),
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(Modifier.height(32.dp))
+
+            // Benefits Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White.copy(alpha = 0.15f)
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Icon(
-                        icon,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
+                    Text(
+                        "Sign in with Google for:",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
+                    )
+                    Text("☁️ Automatic cloud backup to Google Drive", fontSize = 14.sp, color = Color.White)
+                    Text("🔄 Sync across multiple devices", fontSize = 14.sp, color = Color.White)
+                    Text("🔒 Secure data protection", fontSize = 14.sp, color = Color.White)
+                    Text("💾 Never lose your inventory", fontSize = 14.sp, color = Color.White)
+                }
+            }
+
+            Spacer(Modifier.height(32.dp))
+
+            // Sign in Button
+            Button(
+                onClick = onSignInWithGoogle,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.White,
+                    contentColor = Color(0xFF1A237E)
+                )
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Surface(
+                        modifier = Modifier.size(24.dp),
+                        shape = CircleShape,
+                        color = Color.Transparent
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("G", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        "Sign in with Google",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
             }
 
-            Spacer(Modifier.width(16.dp))
+            Spacer(Modifier.height(16.dp))
 
-            Column {
+            // Continue without sign in
+            TextButton(
+                onClick = onContinueWithoutSignIn,
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text(
-                    title,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White
-                )
-                Text(
-                    description,
-                    fontSize = 13.sp,
-                    color = Color.White.copy(alpha = 0.8f)
+                    "Continue without signing in",
+                    color = Color.White,
+                    fontSize = 16.sp
                 )
             }
+
+            Spacer(Modifier.height(8.dp))
+
+            Text(
+                "You can always sign in later from Settings",
+                fontSize = 12.sp,
+                color = Color.White.copy(alpha = 0.7f),
+                textAlign = TextAlign.Center
+            )
         }
     }
 }
