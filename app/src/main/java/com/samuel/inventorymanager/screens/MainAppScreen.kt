@@ -145,6 +145,9 @@ sealed class AppScreen(val route: String) {
     object ImageEdit : AppScreen("image_edit")
     object AIProcessing : AppScreen("ai_processing")
     object AIResults : AppScreen("ai_results")
+    object ImageDetail : AppScreen("image_detail/{itemId}") {
+        fun createRoute(itemId: String) = "image_detail/$itemId"
+    }
 }
 
 data class NavGridItem(
@@ -239,7 +242,7 @@ fun MainAppScreen() {
 
         // Image flow state
         var capturedImageUri by remember { mutableStateOf<Uri?>(null) }
-        var editedBitmap by remember { mutableStateOf<Bitmap?>(null) }
+        var editedBitmaps by remember { mutableStateOf<List<Bitmap>>(emptyList()) }
         var aiAnalysisResult by remember { mutableStateOf<AIAnalysisResult?>(null) }
         var showAddItemSheet by remember { mutableStateOf(false) }
 
@@ -487,10 +490,7 @@ fun MainAppScreen() {
                         .padding(paddingValues)
                         .fillMaxSize()
                 ) {
-                    NavHost(
-                        navController = navController,
-                        startDestination = AppScreen.Dashboard.route
-                    ) {
+                    NavHost(navController = navController, startDestination = AppScreen.Dashboard.route) {
                         composable(AppScreen.Dashboard.route) {
                             DashboardScreen(items, garages)
                         }
@@ -558,9 +558,16 @@ fun MainAppScreen() {
                                 viewModel = createItemViewModel,
                                 appSettings = appSettings,
                                 onDeleteItem = onDeleteItem,
-                                onSettingsChange = onSettingsChange
+                                onSettingsChange = onSettingsChange,
+                                onBack = { // <-- THIS IS THE LOGIC FOR THE NEW PARAMETER
+                                    // This clears the viewmodel state AND navigates back.
+                                    // This is the key to fixing the navigation lock.
+                                    createItemViewModel.clearFormForNewItem()
+                                    navController.popBackStack()
+                                }
                             )
                         }
+
 
                         composable(AppScreen.Overview.route) {
                             OverviewScreen(items, garages)
@@ -607,9 +614,10 @@ fun MainAppScreen() {
                         }
 
                         composable(AppScreen.Images.route) {
+                            // This is the "folders" screen from my first reply.
+                            // It will call the ImageDetailScreen when a folder is clicked.
                             ImagesScreen(items) { item ->
-                                createItemViewModel.loadItemForEditing(item, garages)
-                                navController.navigate(AppScreen.CreateItem.route)
+                                navController.navigate(AppScreen.ImageDetail.createRoute(item.id))
                             }
                         }
 
@@ -633,20 +641,41 @@ fun MainAppScreen() {
                             PlaceholderScreen("Sync")
                         }
 
+                        composable(AppScreen.ImageDetail.route) { backStackEntry ->
+                            val itemId = backStackEntry.arguments?.getString("itemId")
+                            val item = items.find { it.id == itemId }
+
+                            if (item != null) {
+                                // This is where we call YOUR screen
+                                ImageDetailScreen(
+                                    item = item,
+                                    onBack = { navController.popBackStack() },
+                                    onNavigateToEditor = { itemToEdit ->
+                                        createItemViewModel.loadItemForEditing(itemToEdit, garages)
+                                        navController.navigate(AppScreen.CreateItem.route)
+                                    }
+                                )
+                            }
+                        }
                         // Image Edit Screen
                         composable(AppScreen.ImageEdit.route) {
                             capturedImageUri?.let { uri ->
                                 ImageEditScreen(
                                     imageUri = uri,
-                                    onNext = { bitmap, choice ->
-                                        editedBitmap = bitmap
+                                    onNext = { bitmaps, choice ->
+                                        // Store ALL bitmaps
+                                        editedBitmaps = bitmaps
 
                                         when (choice) {
                                             ProcessingChoice.MANUAL -> {
-                                                val savedUri = saveBitmapToUri(context, bitmap)
                                                 createItemViewModel.clearFormForNewItem()
-                                                if(!createItemViewModel.imageUris.contains(savedUri)) {
-                                                    createItemViewModel.imageUris.add(savedUri)
+
+                                                // Save ALL bitmaps
+                                                bitmaps.forEach { bitmap ->
+                                                    val savedUri = saveBitmapToUri(context, bitmap)
+                                                    if(!createItemViewModel.imageUris.contains(savedUri)) {
+                                                        createItemViewModel.imageUris.add(savedUri)
+                                                    }
                                                 }
 
                                                 navController.navigate(AppScreen.CreateItem.route) {
@@ -660,16 +689,17 @@ fun MainAppScreen() {
                                     },
                                     onCancel = {
                                         capturedImageUri = null
-                                        editedBitmap = null
+                                        editedBitmaps = emptyList()
                                         navController.popBackStack()
                                     }
                                 )
                             }
                         }
 
-                        // AI Processing Screen
+// AI Processing Screen - Process FIRST bitmap for AI
                         composable(AppScreen.AIProcessing.route) {
-                            editedBitmap?.let { bitmap ->
+                            val firstBitmap = editedBitmaps.firstOrNull()
+                            firstBitmap?.let { bitmap ->
                                 AIProcessingScreen(
                                     bitmap = bitmap,
                                     onComplete = { result ->
@@ -685,9 +715,9 @@ fun MainAppScreen() {
                             }
                         }
 
-                        // AI Results Screen
                         composable(AppScreen.AIResults.route) {
-                            editedBitmap?.let { bitmap ->
+                            val firstBitmap = editedBitmaps.firstOrNull()
+                            firstBitmap?.let { bitmap ->
                                 aiAnalysisResult?.let { result ->
                                     AIResultsScreen(
                                         bitmap = bitmap,
@@ -698,10 +728,9 @@ fun MainAppScreen() {
                                             }
                                         },
                                         onSaveAndContinue = { finalResult ->
-                                            val savedUri = saveBitmapToUri(context, bitmap)
                                             createItemViewModel.clearFormForNewItem()
 
-                                            // Prefill from AI result using ViewModel properties
+                                            // Prefill from AI result
                                             finalResult.itemName?.let { createItemViewModel.itemName = it }
                                             finalResult.description?.let { createItemViewModel.description = it }
                                             finalResult.modelNumber?.let { createItemViewModel.modelNumber = it }
@@ -711,8 +740,12 @@ fun MainAppScreen() {
                                                 createItemViewModel.maxPrice = (price * 1.2).toString()
                                             }
 
-                                            if(!createItemViewModel.imageUris.contains(savedUri)) {
-                                                createItemViewModel.imageUris.add(savedUri)
+                                            // Save ALL edited bitmaps
+                                            editedBitmaps.forEach { bmp ->
+                                                val savedUri = saveBitmapToUri(context, bmp)
+                                                if(!createItemViewModel.imageUris.contains(savedUri)) {
+                                                    createItemViewModel.imageUris.add(savedUri)
+                                                }
                                             }
 
                                             navController.navigate(AppScreen.CreateItem.route) {
@@ -720,7 +753,7 @@ fun MainAppScreen() {
                                             }
 
                                             capturedImageUri = null
-                                            editedBitmap = null
+                                            editedBitmaps = emptyList()
                                             aiAnalysisResult = null
                                         }
                                     )

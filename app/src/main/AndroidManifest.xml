@@ -50,11 +50,11 @@
             </intent-filter>
         </activity>
 
-        <!--
-        *** FIX for IllegalArgumentException: Couldn't find meta-data... ***
-        The authority must exactly match the string used in FileProvider.getUriForFile()
-        which the log suggests is 'com.samuel.inventorymanager.provider'.
-        -->
+        <!-- ADD THIS FOR CROP ACTIVITY -->
+        <activity
+            android:name="com.canhub.cropper.CropImageActivity"
+            android:theme="@style/Base.Theme.AppCompat" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="com.samuel.inventorymanager.provider"
