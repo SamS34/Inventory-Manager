@@ -33,16 +33,13 @@ The app functions as a single, powerful tool. Core features work completely offl
 - Built with **Jetpack Compose** for a modern, smooth, and responsive experience.
 - The UI is designed with large, touch-friendly components and clean layouts.
 
-### ☁️ Cloud & AI Integration     (COMING SOON)
-- **Backup & Restore** your entire inventory to **Google Drive**.
-- Optional **AI & OCR** integration using API keys to automatically identify items from photos and scan text like model numbers.
-
+### ☁️ Cloud & AI Integration
+- **Backup & Restore** your entire inventory to **Google Sign In**.
+- 
 ---
 
-## 🧠 Optional AI & OCR Setup     (NON TESTED)
-The app works perfectly with its built-in tools. For even more powerful results, you can connect to external services.
-
-> Enter your API keys in **Settings → Advanced Settings & APIs** inside the app. The app uses a fallback system, trying each service in order until it gets a result.
+## 🧠 With Free AI
+Gives app an AI with no cost not the best but its free.
 
 ---
 
@@ -59,7 +56,7 @@ The app works perfectly with its built-in tools. For even more powerful results,
 
 - **Language:** **Kotlin**
 - **UI Toolkit:** **Android Jetpack Compose**
-- **Data Storage:** **Local On-Device Storage**
+- **Data Storage:** **Local On-Device Storage, and GMAIL storage**
 
 
 ---
@@ -69,7 +66,7 @@ The app works perfectly with its built-in tools. For even more powerful results,
 | :--- | :--- |
 | **Export Data** | Saves a complete copy of your inventory as a single `.json` file. |
 | **Import Data** | Loads an inventory from a `.json` file (overwrites current data). |
-| (COMING SOON) **Google Drive** | Sign in to save your backup file directly to a private folder. |     
+| **Google Sign in** | Sign in to save your backup file directly to a private folder. |     
 | **Auto-Save**| Changes are saved automatically as you edit items. |
 
 ## 📝 License
